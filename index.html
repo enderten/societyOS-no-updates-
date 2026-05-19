@@ -1290,8 +1290,8 @@
             localStorage.setItem('permissions',JSON.stringify(permissions));
         }
  
-        // ---- CORE: FULL ADAPTIVE COLORS ----
-        // Extract RGB from wallpaper, apply EVERYWHERE with NO fallback to hardcoded blue
+        // ---- CORE: Full adaptative colors ----
+        // yes yes!
         function updateAdaptiveColors(){
             const body=document.body;
             if(body.classList.contains('custom-wallpaper')){
@@ -1417,14 +1417,13 @@
         const savedPerm=localStorage.getItem('permissions');
         if(savedPerm){permissions=JSON.parse(savedPerm);if(!permissions.camera)document.getElementById('camera-toggle').classList.remove('active');}
  
-        // liquidGL init happens AFTER this script, in its own block below
     </script>
  
-    <!-- Scripts al final del body segun docs oficiales de liquidGL -->
+    <!-- liquid gl maybe ? -->
     <script src="https://raw.githubusercontent.com/naughtyduk/liquidGL/main/scripts/html2canvas.min.js"></script>
     <script src="https://raw.githubusercontent.com/naughtyduk/liquidGL/main/scripts/liquidGL.js"></script>
     <script>
-        // Segun la doc: DOMContentLoaded, estados iniciales YA seteados antes de llamar liquidGL()
+        // hello im enderten if you seeing this hi :)
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 if (typeof liquidGL !== 'undefined') {
