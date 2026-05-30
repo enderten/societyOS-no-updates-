@@ -1,1461 +1,1499 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SerenityOS</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-        * {
-            margin: 0; padding: 0; box-sizing: border-box;
-            user-select: none; -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            tap-highlight-color: transparent;
-            outline: none;
-        }
- 
-        :root {
-            --accent: 59, 130, 246;
-            --accent-hex: #3b82f6;
-        }
- 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-            color: white;
-            height: 100vh;
-            overflow: hidden;
-            position: relative;
-            background: #0f0f1a;
-        }
- 
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 50%, #16213e 100%);
-            background-size: cover;
-            background-position: center;
-            z-index: -1;
-            transition: opacity 0.5s ease;
-        }
- 
-        body.light::before { background: linear-gradient(135deg, #e8f4ff 0%, #b8d4f1 50%, #9ec5e8 100%); }
-        body.custom-wallpaper::before { background-image: var(--custom-wallpaper); }
-        body.light { color: #1a1a3e; }
- 
-        /* STATUS BAR */
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 24px 0;
-            z-index: 100;
-            position: relative;
-        }
- 
-        .time { font-size: 0.9rem; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .status-icons { display: flex; gap: 14px; align-items: center; }
-        .status-icons .material-icons { font-size: 17px; cursor: pointer; opacity: 0.9; }
- 
-        /* HOME SCREEN */
-        .home-screen {
-            padding: 28px 20px 130px;
-            height: calc(100vh - 44px);
-            overflow-y: auto;
-            scrollbar-width: none;
-        }
-        .home-screen::-webkit-scrollbar { display: none; }
- 
-        .app-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
- 
-        /* ICONS */
-        .app-icon {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 7px;
-            cursor: pointer;
-            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        .app-icon.shake { animation: shake 0.5s ease-in-out infinite; }
- 
-        @keyframes shake {
-            0%,100% { transform: rotate(0deg); }
-            25% { transform: rotate(-2.5deg); }
-            75% { transform: rotate(2.5deg); }
-        }
- 
-        .icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: rgba(var(--accent), 0.25);
-            backdrop-filter: blur(12px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.25);
-            border: 1.5px solid rgba(255,255,255,0.18);
-            transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
-            position: relative;
-            overflow: hidden;
-        }
- 
-        body.light .icon {
-            background: rgba(255,255,255,0.55);
-            border: 1.5px solid rgba(var(--accent),0.2);
-        }
- 
-        body.large-icons .icon { width: 86px; height: 86px; }
-        body.large-icons .icon .material-icons { font-size: 44px; }
-        body.large-icons .app-name { opacity:0; height:0; margin:0; overflow:hidden; }
- 
-        .icon .material-icons {
-            font-size: 33px;
-            color: white;
-            filter: drop-shadow(0 1px 4px rgba(0,0,0,0.3));
-            position: relative;
-            z-index: 1;
-        }
- 
-        body.light .icon .material-icons { color: var(--accent-hex); }
- 
-        .app-icon:hover .icon {
-            transform: scale(1.1) translateY(-4px);
-            box-shadow: 0 14px 36px rgba(0,0,0,0.3);
-        }
- 
-        .app-icon:active .icon { transform: scale(0.88); }
- 
-        .app-name {
-            font-size: 0.78rem;
-            text-align: center;
-            max-width: 78px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-weight: 600;
-            text-shadow: 0 1px 5px rgba(0,0,0,0.7);
-        }
- 
-        body.light .app-name { text-shadow: none; color: #1a1a3e; }
- 
-        /* FOLDER */
-        .folder-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 7px;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        .folder-icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: rgba(var(--accent), 0.2);
-            backdrop-filter: blur(12px);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 3px;
-            padding: 12px;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.25);
-            border: 1.5px solid rgba(255,255,255,0.18);
-            transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
-        }
- 
-        .folder-wrapper:hover .folder-icon { transform: scale(1.1) translateY(-4px); }
-        .folder-wrapper:active .folder-icon { transform: scale(0.88); }
- 
-        .mini-icon {
-            border-radius: 50%;
-            background: rgba(255,255,255,0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
- 
-        .mini-icon .material-icons { font-size: 10px; color: white; }
- 
-        /* FOLDER MODAL */
-        .folder-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 25000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.45);
-            backdrop-filter: blur(24px);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
- 
-        .folder-modal.show { opacity: 1; pointer-events: all; }
- 
-        .folder-modal-inner {
-            background: rgba(var(--accent), 0.15);
-            backdrop-filter: blur(50px);
-            border-radius: 38px;
-            padding: 28px;
-            min-width: 280px;
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
-            animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
-        }
- 
-        @keyframes popIn {
-            from { opacity:0; transform: scale(0.7); }
-            to { opacity:1; transform: scale(1); }
-        }
- 
-        .folder-modal-title {
-            text-align: center;
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 20px;
-            opacity: 0.8;
-        }
- 
-        .folder-modal-grid {
-            display: grid;
-            grid-template-columns: repeat(3,1fr);
-            gap: 16px;
-        }
- 
-        /* DOCK */
-        .dock {
-            position: fixed;
-            bottom: 26px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 13px 20px;
-            border-radius: 999px;
-            display: flex;
-            gap: 16px;
-            z-index: 1000;
-            background: rgba(10,10,30,0.3);
-            backdrop-filter: blur(50px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.07);
-            transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
-        }
- 
-        body.light .dock {
-            background: rgba(255,255,255,0.22);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
-        }
- 
-        .dock.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateX(-50%) translateY(20px);
-        }
- 
-        .dock-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: rgba(var(--accent), 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
-            border: 1.5px solid rgba(255,255,255,0.1);
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        body.light .dock-icon {
-            background: rgba(255,255,255,0.5);
-        }
- 
-        .dock-icon:hover { transform: scale(1.2) translateY(-10px); }
-        .dock-icon:active { transform: scale(0.9); }
- 
-        .dock-icon .material-icons {
-            font-size: 28px;
-            color: white;
-        }
- 
-        body.light .dock-icon .material-icons { color: var(--accent-hex); }
- 
-        /* HOME BUTTON */
-        .home-button {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) scale(0);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.16);
-            backdrop-filter: blur(20px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 31000;
-            border: 2px solid rgba(255,255,255,0.3);
-            box-shadow: 0 8px 28px rgba(0,0,0,0.3);
-            transition: all 0.45s cubic-bezier(0.34,1.56,0.64,1);
-            opacity: 0;
-            pointer-events: none;
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        .home-button.visible {
-            transform: translateX(-50%) scale(1);
-            opacity: 1;
-            pointer-events: all;
-        }
- 
-        .home-button:hover {
-            transform: translateX(-50%) scale(1.15);
-            background: rgba(var(--accent), 0.35);
-        }
- 
-        .home-button:active { transform: translateX(-50%) scale(0.9); }
- 
-        .home-button .material-icons { font-size: 20px; color: white; }
- 
-        /* CONTEXT MENU */
-        .context-menu {
-            position: fixed;
-            background: rgba(16,16,36,0.96);
-            backdrop-filter: blur(40px);
-            border-radius: 28px;
-            padding: 10px;
-            display: none;
-            flex-direction: column;
-            gap: 2px;
-            z-index: 10000;
-            min-width: 210px;
-            animation: menuAppear 0.3s cubic-bezier(0.34,1.56,0.64,1);
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
- 
-        .context-menu.show { display: flex; }
- 
-        @keyframes menuAppear {
-            from { opacity:0; transform: scale(0.8) translateY(10px); }
-            to { opacity:1; transform: scale(1) translateY(0); }
-        }
- 
-        .menu-item {
-            padding: 12px 16px;
-            border-radius: 18px;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 600;
-            font-size: 0.92rem;
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        .menu-item:hover { background: rgba(var(--accent), 0.2); }
-        .menu-item .material-icons { font-size: 19px; color: var(--accent-hex); }
- 
-        /* PANELS */
-        .control-center, .settings-panel {
-            position: fixed;
-            top: 0;
-            right: -110%;
-            width: 100%;
-            max-width: 380px;
-            height: 100vh;
-            background: rgba(14,14,34,0.97);
-            backdrop-filter: blur(60px);
-            z-index: 20000;
-            transition: right 0.4s cubic-bezier(0.4,0,0.2,1);
-            overflow-y: auto;
-            border-left: 1px solid rgba(255,255,255,0.06);
-        }
- 
-        .control-center.show, .settings-panel.show { right: 0; }
- 
-        .panel-header {
-            padding: 28px 22px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
- 
-        .panel-header h2 { font-size: 1.6rem; font-weight: 700; }
- 
-        .close-btn {
-            width: 34px; height: 34px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        .close-btn:hover { background: rgba(var(--accent),0.3); transform: rotate(90deg); }
-        .close-btn .material-icons { color: white; font-size: 18px; }
- 
-        .panel-content { padding: 16px; }
- 
-        .brightness-control {
-            padding: 20px;
-            border-radius: 26px;
-            margin-bottom: 14px;
-            border: 1px solid rgba(255,255,255,0.06);
-            background: rgba(255,255,255,0.05);
-        }
- 
-        .brightness-slider {
-            width: 100%;
-            height: 5px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.12);
-            appearance: none;
-            outline: none;
-            cursor: pointer;
-            margin-top: 4px;
-        }
- 
-        .brightness-slider::-webkit-slider-thumb {
-            appearance: none;
-            width: 22px; height: 22px;
-            border-radius: 50%;
-            background: white;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
- 
-        .control-grid {
-            display: grid;
-            grid-template-columns: repeat(2,1fr);
-            gap: 10px;
-        }
- 
-        .control-tile {
-            padding: 18px 16px;
-            border-radius: 24px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            border: 1px solid rgba(255,255,255,0.06);
-            background: rgba(255,255,255,0.06);
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        .control-tile:hover { transform: scale(1.03); }
-        .control-tile.active { background: rgba(var(--accent),0.45); border-color: rgba(var(--accent),0.5); }
-        .control-tile .material-icons { font-size: 24px; }
-        .control-tile .label { font-weight: 600; font-size: 0.88rem; }
- 
-        .setting-group { margin-bottom: 22px; }
- 
-        .setting-group-title {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            opacity: 0.45;
-            margin-bottom: 10px;
-            letter-spacing: 0.08em;
-            padding-left: 4px;
-        }
- 
-        .setting-item {
-            background: rgba(255,255,255,0.05);
-            padding: 16px;
-            border-radius: 22px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            border: 1px solid rgba(255,255,255,0.04);
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        .setting-item:hover { background: rgba(255,255,255,0.09); }
-        .setting-info { display: flex; align-items: center; gap: 13px; }
-        .setting-info .material-icons { font-size: 21px; color: var(--accent-hex); }
-        .setting-label { font-weight: 600; font-size: 0.93rem; }
-        .setting-description { font-size: 0.8rem; opacity: 0.55; margin-top: 2px; }
- 
-        .toggle-switch {
-            width: 46px; height: 26px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 20px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            flex-shrink: 0;
-        }
- 
-        .toggle-switch.active { background: var(--accent-hex); }
- 
-        .toggle-switch::after {
-            content: '';
-            position: absolute;
-            width: 20px; height: 20px;
-            background: white;
-            border-radius: 50%;
-            top: 3px; left: 3px;
-            transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
- 
-        .toggle-switch.active::after { left: 23px; }
- 
-        /* APP FULLSCREEN - HyperOS 3 animation */
-        .app-fullscreen {
-            position: fixed;
-            inset: 0;
-            background: #0a0a18;
-            z-index: 30000;
-            display: none;
-            flex-direction: column;
-            transform-origin: center center;
-        }
- 
-        .app-fullscreen.show {
-            display: flex;
-            animation: hyperOpen 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
- 
-        .app-fullscreen.closing {
-            animation: hyperClose 0.38s cubic-bezier(0.4, 0, 1, 1) forwards;
-        }
- 
-        @keyframes hyperOpen {
-            0% {
-                opacity: 0;
-                transform: scale(0.88) translateY(30px);
-                border-radius: 40px;
-            }
-            60% {
-                opacity: 1;
-                border-radius: 20px;
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) translateY(0px);
-                border-radius: 0px;
-            }
-        }
- 
-        @keyframes hyperClose {
-            0% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-                border-radius: 0px;
-            }
-            100% {
-                opacity: 0;
-                transform: scale(0.85) translateY(40px);
-                border-radius: 40px;
-            }
-        }
- 
-        .app-header {
-            display: flex;
-            align-items: center;
-            padding: 18px 20px 14px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            gap: 12px;
-        }
- 
-        .app-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            flex: 1;
-        }
- 
-        .app-content {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            scrollbar-width: none;
-        }
- 
-        .app-content::-webkit-scrollbar { display: none; }
- 
-        /* CAMERA */
-        #cam {
-            width: 100%;
-            max-width: 640px;
-            border-radius: 22px;
-            background: #000;
-            display: block;
-        }
- 
-        .camera-controls {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 14px;
-        }
- 
-        .camera-btn {
-            padding: 12px 20px;
-            border-radius: 999px;
-            background: rgba(var(--accent), 0.25);
-            border: 1.5px solid rgba(255,255,255,0.2);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            font-weight: 600;
-            color: white;
-            transition: all 0.25s ease;
-            font-size: 0.88rem;
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        .camera-btn:hover { background: rgba(var(--accent), 0.45); }
-        .camera-btn .material-icons { font-size: 18px; }
- 
-        /* GALLERY - improved */
-        .gallery-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
- 
-        .gallery-header h3 { font-size: 1.1rem; font-weight: 700; opacity: 0.9; }
- 
-        .gallery-empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            height: 200px;
-            opacity: 0.4;
-        }
- 
-        .gallery-empty .material-icons { font-size: 48px; }
-        .gallery-empty p { font-size: 0.9rem; }
- 
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 10px;
-        }
- 
-        .gallery-item {
-            position: relative;
-            border-radius: 18px;
-            overflow: hidden;
-            background: rgba(255,255,255,0.06);
-            aspect-ratio: 1;
-            cursor: pointer;
-        }
- 
-        .gallery-item img, .gallery-item video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
- 
-        .gallery-item-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.6));
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            display: flex;
-            align-items: flex-end;
-            padding: 8px;
-        }
- 
-        .gallery-item:hover .gallery-item-overlay { opacity: 1; }
- 
-        .gallery-del-btn {
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            background: rgba(220,50,50,0.9);
-            border: none;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: auto;
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        .gallery-del-btn .material-icons { font-size: 14px; }
- 
-        /* VIDEO BADGE */
-        .video-badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 8px;
-            padding: 3px 6px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
- 
-        .video-badge .material-icons { font-size: 12px; }
- 
-        /* CALCULATOR */
-        .calc-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            max-width: 320px;
-            margin: 0 auto;
-        }
- 
-        .calc-display {
-            background: rgba(0,0,0,0.25);
-            border-radius: 26px;
-            padding: 18px 22px 16px;
-            text-align: right;
-            border: 1px solid rgba(255,255,255,0.06);
-        }
- 
-        .calc-expr { font-size: 0.88rem; opacity: 0.45; min-height: 18px; margin-bottom: 4px; word-break: break-all; }
-        .calc-result { font-size: 3rem; font-weight: 200; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
- 
-        .calc-buttons {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 9px;
-        }
- 
-        .calc-btn {
-            height: 66px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            font-size: 1.25rem;
-            font-weight: 500;
-            transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
-        }
- 
-        .calc-btn:active { transform: scale(0.87); filter: brightness(1.3); }
-        .calc-btn:hover { filter: brightness(1.15); }
- 
-        .calc-btn.num { background: rgba(80,80,110,0.55); color: white; }
-        .calc-btn.op { background: rgba(var(--accent), 0.65); color: white; }
-        .calc-btn.fn { background: rgba(110,110,140,0.45); color: white; font-size: 1rem; }
-        .calc-btn.eq { background: var(--accent-hex); color: white; }
-        .calc-btn.zero { border-radius: 33px; grid-column: span 2; justify-content: flex-start; padding-left: 24px; }
- 
-        /* MISC */
-        #wallpaper-input, #media-picker { display: none; }
- 
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.35);
-            backdrop-filter: blur(4px);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 9999;
-        }
- 
-        .overlay.show { opacity:1; pointer-events:all; }
- 
-        .brightness-overlay {
-            position: fixed;
-            inset: 0;
-            background: black;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 50000;
-            transition: opacity 0.3s ease;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>societyOS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;outline:none;font-family:'Inter',sans-serif;}
+:root{
+  --ac:120,160,255;
+  --ac-hex:#78a0ff;
+  --sp:cubic-bezier(0.34,1.56,0.64,1);
+  --eo:cubic-bezier(0.22,1,0.36,1);
+  --ei:cubic-bezier(0.4,0,1,1);
+}
+body{height:100vh;width:100vw;overflow:hidden;background:#000;color:#fff;}
+body.light{color:#0a0a14;}
+
+#wp{position:fixed;inset:0;z-index:-2;background:linear-gradient(160deg,#0d0d1a 0%,#111830 40%,#0a0f1e 100%);background-size:cover;background-position:center;transition:all .5s ease;}
+body.light #wp{background:linear-gradient(160deg,#dce8ff 0%,#c4d8ff 50%,#b0ccff 100%);}
+#dim{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:49999;transition:opacity .3s;}
+
+/* STATUS BAR */
+.sb{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 0;position:relative;z-index:500;}
+.sb-left{display:flex;align-items:center;gap:8px;}
+.sb-time{font-size:.88rem;font-weight:700;}
+body.light .sb-time{color:#0a0a14;}
+.batt{display:flex;align-items:center;gap:5px;}
+.batt-shell{width:26px;height:13px;border-radius:3.5px;border:1.5px solid rgba(255,255,255,.55);position:relative;display:flex;align-items:center;padding:1.5px;}
+body.light .batt-shell{border-color:rgba(0,0,0,.4);}
+.batt-shell::after{content:'';position:absolute;right:-5px;top:50%;transform:translateY(-50%);width:2.5px;height:5.5px;background:rgba(255,255,255,.55);border-radius:0 2px 2px 0;}
+body.light .batt-shell::after{background:rgba(0,0,0,.4);}
+.batt-fill{height:100%;width:75%;border-radius:2px;background:#34d399;transition:all .5s ease;}
+.batt-pct{font-size:.68rem;font-weight:700;opacity:.75;}
+body.light .batt-pct{color:#0a0a14;}
+.sb-right{display:flex;align-items:center;gap:7px;}
+.sb-ico{font-size:20px;cursor:pointer;opacity:.85;display:flex;align-items:center;}
+body.light .sb-ico{color:#0a0a14;}
+
+/* HOME */
+.home{padding:20px 18px 8px;height:calc(100vh - 42px - 84px);overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.home::-webkit-scrollbar{display:none;}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;max-width:440px;margin:0 auto;}
+
+/* REAL ICON STYLE */
+.ai{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:transform .28s var(--sp);animation:iconIn .45s var(--sp) both;}
+@keyframes iconIn{from{opacity:0;transform:scale(.65) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.ai.shake{animation:shake .45s ease-in-out infinite!important;}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+
+.ai-ic{
+  width:64px;height:64px;border-radius:50%;
+  background:rgba(var(--ac),.22);
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid rgba(255,255,255,.14);
+  backdrop-filter:blur(6px);
+  transition:all .28s var(--sp);
+  position:relative;overflow:hidden;
+  flex-shrink:0;
+}
+body.light .ai-ic{background:rgba(255,255,255,.65);border:1.5px solid rgba(0,0,0,.06);}
+.ai-ic::before{content:'';position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,rgba(255,255,255,.18) 0%,transparent 60%);pointer-events:none;}
+/* REAL ICON - SVG or emoji rendered via canvas-style div */
+.ai-ic .app-icon-img{width:36px;height:36px;object-fit:contain;border-radius:8px;}
+.ai-ic .app-icon-emoji{font-size:32px;line-height:1;display:flex;align-items:center;justify-content:center;font-style:normal;}
+.ai-ic .app-icon-svg{width:32px;height:32px;display:flex;align-items:center;justify-content:center;}
+.ai-ic .app-icon-svg svg{width:100%;height:100%;}
+.ai-ic .user-icon-img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+
+body.large-icons .ai-ic{width:78px;height:78px;}
+body.large-icons .ai-ic .app-icon-emoji{font-size:44px;}
+body.large-icons .ai-ic .app-icon-svg{width:44px;height:44px;}
+body.large-icons .ai-nm{display:none;}
+
+.ai:hover .ai-ic{transform:scale(1.1) translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.3);}
+.ai:active .ai-ic{transform:scale(.87);}
+
+.ai-nm{font-size:.7rem;font-weight:600;text-align:center;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.65);}
+body.light .ai-nm{text-shadow:none;color:#0a0a14;}
+
+/* FOLDER */
+.fi-wrap{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;animation:iconIn .45s var(--sp) both;}
+.fi-ic{width:64px;height:64px;border-radius:50%;background:rgba(var(--ac),.18);display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:12px;border:1.5px solid rgba(255,255,255,.14);backdrop-filter:blur(6px);transition:all .28s var(--sp);}
+body.light .fi-ic{background:rgba(255,255,255,.65);border:1.5px solid rgba(0,0,0,.06);}
+.fi-wrap:hover .fi-ic{transform:scale(1.1) translateY(-4px);}
+.fi-wrap:active .fi-ic{transform:scale(.87);}
+.fi-mini{border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:9px;}
+
+/* DOCK */
+.dock{margin:0 auto 18px;width:fit-content;padding:11px 18px;border-radius:999px;display:flex;gap:14px;align-items:center;background:rgba(255,255,255,.08);backdrop-filter:blur(24px);box-shadow:0 8px 32px rgba(0,0,0,.25),inset 0 0 0 1px rgba(255,255,255,.08);transition:all .4s var(--eo);}
+body.light .dock{background:rgba(255,255,255,.35);box-shadow:0 8px 32px rgba(0,0,0,.1),inset 0 0 0 1px rgba(255,255,255,.6);}
+.dock.hidden{opacity:0;pointer-events:none;transform:translateY(24px) scale(.95);}
+.di{width:52px;height:52px;border-radius:50%;background:rgba(var(--ac),.22);display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.1);backdrop-filter:blur(6px);transition:all .28s var(--sp);font-size:24px;}
+body.light .di{background:rgba(255,255,255,.65);border:1.5px solid rgba(0,0,0,.06);}
+.di:hover{transform:scale(1.2) translateY(-10px);box-shadow:0 12px 30px rgba(0,0,0,.25);}
+.di:active{transform:scale(.9);}
+
+/* HOME BTN */
+.hbtn{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) scale(0);width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.14);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:31000;border:2px solid rgba(255,255,255,.28);transition:all .42s var(--sp);opacity:0;pointer-events:none;font-size:20px;}
+.hbtn.on{transform:translateX(-50%) scale(1);opacity:1;pointer-events:all;}
+.hbtn:hover{transform:translateX(-50%) scale(1.15);background:rgba(var(--ac),.35);}
+.hbtn:active{transform:translateX(-50%) scale(.92);}
+
+/* CONTEXT MENU */
+.ctx{position:fixed;display:none;flex-direction:column;gap:2px;background:rgba(18,18,32,.97);backdrop-filter:blur(40px);border-radius:22px;padding:8px;min-width:200px;border:1px solid rgba(255,255,255,.07);box-shadow:0 20px 60px rgba(0,0,0,.55);z-index:10000;animation:ctxIn .25s var(--sp);}
+body.light .ctx{background:rgba(245,247,255,.98);border:1px solid rgba(0,0,0,.07);}
+.ctx.on{display:flex;}
+@keyframes ctxIn{from{opacity:0;transform:scale(.82) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.ctx-i{padding:11px 13px;border-radius:14px;cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:600;font-size:.88rem;transition:background .15s;}
+body.light .ctx-i{color:#0a0a14;}
+.ctx-i:hover{background:rgba(var(--ac),.18);}
+.ctx-i .ico{font-size:18px;color:rgb(var(--ac));}
+.ctx-sep{height:1px;background:rgba(255,255,255,.07);margin:4px 0;}
+body.light .ctx-sep{background:rgba(0,0,0,.07);}
+
+/* PANEL */
+.panel{position:fixed;top:0;right:-105%;width:min(390px,100vw);height:100vh;background:rgba(12,12,26,.97);backdrop-filter:blur(60px);border-left:1px solid rgba(255,255,255,.06);z-index:20000;transition:right .42s var(--eo);display:flex;flex-direction:column;overflow:hidden;}
+body.light .panel{background:rgba(238,244,255,.98);border-left:1px solid rgba(0,0,0,.06);}
+.panel.on{right:0;}
+.ph{padding:28px 22px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;}
+body.light .ph{border-bottom:1px solid rgba(0,0,0,.06);}
+.ph-t{font-size:1.55rem;font-weight:800;letter-spacing:-.03em;}
+body.light .ph-t{color:#0a0a14;}
+.ph-x{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.08);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .28s;font-size:16px;}
+body.light .ph-x{background:rgba(0,0,0,.07);}
+.ph-x:hover{transform:rotate(90deg) scale(1.1);background:rgba(var(--ac),.25);}
+.pc{padding:16px 18px;flex:1;overflow-y:auto;scrollbar-width:none;}
+.pc::-webkit-scrollbar{display:none;}
+
+/* SETTINGS ITEMS */
+.sg{margin-bottom:22px;}
+.sg-t{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.09em;opacity:.38;margin-bottom:9px;padding-left:4px;}
+body.light .sg-t{color:#0a0a14;}
+.si{background:rgba(255,255,255,.05);padding:13px 15px;border-radius:18px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .18s;border:1px solid rgba(255,255,255,.04);}
+body.light .si{background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.05);}
+.si:hover{background:rgba(255,255,255,.09);}
+body.light .si:hover{background:rgba(255,255,255,.92);}
+.si:active{transform:scale(.98);}
+.si-l{display:flex;align-items:center;gap:12px;}
+.si-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px;}
+.si-label{font-weight:600;font-size:.88rem;}
+body.light .si-label{color:#0a0a14;}
+.si-sub{font-size:.75rem;opacity:.45;margin-top:1px;}
+body.light .si-sub{color:#0a0a14;}
+.si-val{font-size:.8rem;opacity:.4;}
+body.light .si-val{color:#0a0a14;}
+.si-arr{font-size:16px;opacity:.3;}
+
+/* TOGGLE */
+.tog{width:42px;height:24px;border-radius:12px;background:rgba(255,255,255,.14);position:relative;cursor:pointer;transition:background .28s;flex-shrink:0;}
+.tog.on{background:rgb(var(--ac));}
+.tog::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:all .28s var(--sp);box-shadow:0 2px 6px rgba(0,0,0,.25);}
+.tog.on::after{left:21px;}
+
+/* CC */
+.cc-card{background:rgba(255,255,255,.05);padding:16px 18px;border-radius:22px;border:1px solid rgba(255,255,255,.05);margin-bottom:12px;}
+body.light .cc-card{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.05);}
+.cc-sl-lbl{display:flex;align-items:center;gap:9px;margin-bottom:11px;font-size:.88rem;font-weight:600;}
+body.light .cc-sl-lbl{color:#0a0a14;}
+.cc-sl-lbl .ico{font-size:20px;color:rgb(var(--ac));}
+input[type=range]{width:100%;height:4px;border-radius:10px;background:rgba(255,255,255,.14);appearance:none;cursor:pointer;}
+body.light input[type=range]{background:rgba(0,0,0,.1);}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;}
+.cc-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cc-tile{padding:15px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.05);cursor:pointer;transition:all .22s;display:flex;flex-direction:column;gap:5px;font-size:21px;}
+body.light .cc-tile{background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.05);}
+.cc-tile:hover{transform:scale(1.03);}
+.cc-tile:active{transform:scale(.97);}
+.cc-tile.on{background:rgba(var(--ac),.42);border-color:rgba(var(--ac),.5);}
+.cc-tile-lbl{font-size:.8rem;font-weight:700;}
+body.light .cc-tile-lbl{color:#0a0a14;}
+.cc-tile.on .cc-tile-lbl{color:#fff;}
+.cc-tile.on .ico{color:#fff!important;}
+
+/* APP FULLSCREEN */
+.af{position:fixed;inset:0;z-index:30000;background:#0a0a18;display:none;flex-direction:column;transform-origin:center center;}
+.af.in{display:flex;animation:afIn .52s var(--eo) forwards;}
+.af.out{display:flex;animation:afOut .38s var(--ei) forwards;}
+@keyframes afIn{0%{opacity:0;transform:scale(.84) translateY(36px);border-radius:48px;filter:blur(4px);}50%{border-radius:28px;filter:blur(0);}100%{opacity:1;transform:scale(1) translateY(0);border-radius:0;}}
+@keyframes afOut{0%{opacity:1;transform:scale(1);border-radius:0;}100%{opacity:0;transform:scale(.82) translateY(42px);border-radius:48px;filter:blur(3px);}}
+.af-hd{display:flex;align-items:center;gap:12px;padding:18px 20px 13px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;}
+.af-title{font-size:1.15rem;font-weight:800;letter-spacing:-.02em;}
+.af-body{flex:1;overflow-y:auto;scrollbar-width:none;}
+.af-body::-webkit-scrollbar{display:none;}
+
+/* CAMERA */
+.cam-wrap{position:relative;width:100%;height:100%;background:#000;display:flex;flex-direction:column;overflow:hidden;}
+#cam-v{width:100%;flex:1;object-fit:cover;}
+.cam-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:18px 20px;background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent);z-index:2;}
+.cam-tbtn{width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.38);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);transition:all .2s;font-size:19px;color:#fff;}
+.cam-bot{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,.88),transparent);padding:0 0 30px;z-index:2;}
+.cam-modes{display:flex;justify-content:center;gap:20px;padding:14px 0 18px;}
+.cam-mode{font-size:.72rem;font-weight:800;letter-spacing:.08em;color:rgba(255,255,255,.42);cursor:pointer;transition:all .2s;padding:3px 0;border-bottom:2px solid transparent;}
+.cam-mode.on{color:#fff;border-bottom-color:#fff;}
+.cam-ctrls{display:flex;align-items:center;justify-content:space-evenly;}
+.cam-thumb{width:52px;height:52px;border-radius:12px;border:2.5px solid rgba(255,255,255,.45);overflow:hidden;cursor:pointer;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:20px;}
+.cam-thumb img{width:100%;height:100%;object-fit:cover;}
+.cam-shut{width:76px;height:76px;border-radius:50%;border:4px solid rgba(255,255,255,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cam-shut:active{transform:scale(.9);}
+.cam-shut-in{width:60px;height:60px;border-radius:50%;background:#fff;transition:all .22s ease;}
+.cam-shut.vid .cam-shut-in{background:#ef4444;}
+.cam-shut.rec .cam-shut-in{border-radius:10px;width:26px;height:26px;}
+.cam-flip{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.13);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;transition:all .25s;}
+.cam-flip:active{transform:rotate(180deg) scale(.9);}
+.cam-flash-fx{position:absolute;inset:0;background:#fff;pointer-events:none;z-index:10;opacity:0;transition:opacity .08s;}
+
+/* GALLERY */
+.gal-wrap{padding:18px;}
+.gal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.gal-hd h3{font-size:1.05rem;font-weight:800;}
+body.light .gal-hd h3{color:#0a0a14;}
+.gal-cnt{font-size:.8rem;opacity:.38;}
+.gal-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:220px;opacity:.3;font-size:48px;}
+.gal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.gal-item{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;cursor:pointer;background:rgba(255,255,255,.06);transition:transform .2s;}
+.gal-item:hover{transform:scale(1.03);}
+.gal-item img,.gal-item video{width:100%;height:100%;object-fit:cover;}
+.gal-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.7));opacity:0;transition:opacity .2s;display:flex;align-items:flex-end;padding:7px;}
+.gal-item:hover .gal-ov{opacity:1;}
+.gal-del{width:26px;height:26px;border-radius:50%;background:rgba(220,50,50,.9);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:auto;font-size:13px;}
+.vid-badge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);border-radius:6px;padding:2px 6px;font-size:.62rem;font-weight:800;display:flex;align-items:center;gap:3px;}
+
+/* CALC */
+.calc{padding:16px;max-width:310px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
+.calc-disp{background:rgba(0,0,0,.28);border-radius:22px;padding:16px 18px 14px;text-align:right;border:1px solid rgba(255,255,255,.06);}
+.calc-expr{font-size:.82rem;opacity:.38;min-height:17px;margin-bottom:3px;}
+.calc-res{font-size:2.9rem;font-weight:200;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.cb{height:62px;border-radius:50%;border:none;cursor:pointer;font-size:1.18rem;font-weight:600;display:flex;align-items:center;justify-content:center;transition:all .16s var(--sp);}
+.cb:active{transform:scale(.85);filter:brightness(1.4);}
+.cb.n{background:rgba(70,70,110,.5);color:#fff;}
+.cb.o{background:rgba(var(--ac),.6);color:#fff;}
+.cb.f{background:rgba(110,110,145,.42);color:#fff;font-size:.92rem;}
+.cb.e{background:rgb(var(--ac));color:#fff;}
+.cb.z{border-radius:31px;grid-column:span 2;justify-content:flex-start;padding-left:22px;}
+
+/* NOTES */
+.notes-wrap{padding:16px;display:flex;flex-direction:column;gap:10px;height:100%;}
+.notes-new{display:flex;gap:8px;flex-shrink:0;}
+.notes-inp{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:10px 13px;color:#fff;font-size:.9rem;outline:none;user-select:text;-webkit-user-select:text;}
+body.light .notes-inp{background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.09);color:#0a0a14;}
+.notes-add{width:40px;height:40px;border-radius:13px;background:rgb(var(--ac));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px;color:#fff;}
+.notes-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+.note-item{background:rgba(255,255,255,.05);border-radius:14px;padding:12px 14px;border:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:flex-start;}
+body.light .note-item{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.05);}
+.note-txt{font-size:.88rem;font-weight:500;flex:1;line-height:1.4;}
+body.light .note-txt{color:#0a0a14;}
+.note-del{background:none;border:none;cursor:pointer;font-size:17px;color:#ef4444;padding:0 0 0 8px;flex-shrink:0;opacity:.5;}
+.note-del:hover{opacity:1;}
+
+/* WEATHER */
+.weather-wrap{padding:24px;display:flex;flex-direction:column;align-items:center;gap:20px;}
+.weather-city{font-size:1rem;font-weight:700;opacity:.6;}
+body.light .weather-city{color:#0a0a14;}
+.weather-temp{font-size:5rem;font-weight:200;letter-spacing:-.04em;}
+body.light .weather-temp{color:#0a0a14;}
+.weather-cond{font-size:1.1rem;opacity:.7;}
+body.light .weather-cond{color:#0a0a14;}
+.weather-details{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;}
+.weather-card{background:rgba(255,255,255,.05);border-radius:18px;padding:14px 12px;text-align:center;border:1px solid rgba(255,255,255,.05);}
+body.light .weather-card{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.05);}
+.weather-card .ico{font-size:24px;color:rgb(var(--ac));margin-bottom:6px;display:block;}
+.weather-card-val{font-size:1rem;font-weight:700;}
+body.light .weather-card-val{color:#0a0a14;}
+.weather-card-lbl{font-size:.7rem;opacity:.4;margin-top:2px;}
+body.light .weather-card-lbl{color:#0a0a14;}
+
+/* ADD APP */
+.add-wrap{padding:20px;display:flex;flex-direction:column;gap:16px;}
+.add-title{font-size:1.05rem;font-weight:800;margin-bottom:2px;}
+body.light .add-title{color:#0a0a14;}
+.add-lbl{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.09em;opacity:.38;margin-bottom:5px;}
+body.light .add-lbl{color:#0a0a14;}
+.add-inp{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 15px;color:#fff;font-size:.92rem;outline:none;transition:border .2s;user-select:text;-webkit-user-select:text;}
+body.light .add-inp{background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.09);color:#0a0a14;}
+.add-inp:focus{border-color:rgb(var(--ac));}
+.add-inp::placeholder{opacity:.35;}
+.add-ico-row{display:flex;align-items:center;gap:14px;}
+.add-ico-prev{width:60px;height:60px;border-radius:50%;background:rgba(var(--ac),.22);border:1.5px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0;font-size:26px;}
+.add-ico-prev:hover{transform:scale(1.08);}
+.add-ico-prev img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.add-hint{font-size:.8rem;opacity:.45;line-height:1.4;}
+body.light .add-hint{color:#0a0a14;}
+.add-btn{padding:14px;border-radius:16px;border:none;background:rgb(var(--ac));color:#fff;font-size:.95rem;font-weight:800;cursor:pointer;transition:all .22s;width:100%;}
+.add-btn:hover{filter:brightness(1.1);transform:scale(1.02);}
+.add-btn:active{transform:scale(.97);}
+.add-note{font-size:.78rem;opacity:.4;text-align:center;line-height:1.5;}
+body.light .add-note{color:#0a0a14;}
+
+/* ABOUT */
+.about-wrap{padding:28px 20px;display:flex;flex-direction:column;align-items:center;gap:20px;}
+.about-logo{width:90px;height:90px;border-radius:28px;background:linear-gradient(135deg,rgb(var(--ac)),rgba(var(--ac),.5));display:flex;align-items:center;justify-content:center;box-shadow:0 12px 40px rgba(var(--ac),.35);font-size:46px;}
+.about-name{font-size:1.8rem;font-weight:900;letter-spacing:-.04em;}
+body.light .about-name{color:#0a0a14;}
+.about-tag{font-size:.82rem;opacity:.45;text-align:center;max-width:280px;line-height:1.5;}
+body.light .about-tag{color:#0a0a14;}
+.about-ver{background:rgba(var(--ac),.15);border:1px solid rgba(var(--ac),.25);border-radius:20px;padding:8px 20px;font-size:.82rem;font-weight:700;color:rgb(var(--ac));}
+.about-card{width:100%;background:rgba(255,255,255,.05);border-radius:18px;padding:14px 16px;border:1px solid rgba(255,255,255,.05);}
+body.light .about-card{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.05);}
+.about-card-t{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.09em;opacity:.38;margin-bottom:10px;}
+body.light .about-card-t{color:#0a0a14;}
+.about-stat{display:flex;justify-content:space-around;}
+.about-stat-num{font-size:1.4rem;font-weight:800;color:rgb(var(--ac));text-align:center;}
+.about-stat-lbl{font-size:.7rem;opacity:.45;margin-top:2px;text-align:center;}
+body.light .about-stat-lbl{color:#0a0a14;}
+.open-badge{display:flex;align-items:center;gap:7px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);border-radius:20px;padding:8px 16px;font-size:.8rem;font-weight:700;color:#22c55e;}
+
+/* FOLDER SELECT */
+.fsel{position:fixed;inset:0;z-index:26000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(20px);opacity:0;pointer-events:none;transition:opacity .3s;}
+.fsel.on{opacity:1;pointer-events:all;}
+.fsel-inner{background:rgba(18,18,32,.97);border-radius:28px;padding:20px;width:296px;max-height:78vh;border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:12px;animation:popIn .35s var(--sp);}
+body.light .fsel-inner{background:rgba(238,244,255,.98);border:1px solid rgba(0,0,0,.07);}
+@keyframes popIn{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:scale(1)}}
+.fsel-t{font-size:.95rem;font-weight:800;text-align:center;opacity:.75;}
+body.light .fsel-t{color:#0a0a14;}
+.fsel-inp{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:10px 13px;color:#fff;font-size:.88rem;outline:none;user-select:text;-webkit-user-select:text;width:100%;}
+body.light .fsel-inp{background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.09);color:#0a0a14;}
+.fsel-list{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:5px;max-height:45vh;}
+.fsel-item{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:13px;cursor:pointer;transition:background .15s;}
+.fsel-item:hover{background:rgba(255,255,255,.07);}
+body.light .fsel-item:hover{background:rgba(0,0,0,.05);}
+.fsel-ico{width:36px;height:36px;border-radius:50%;background:rgba(var(--ac),.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px;}
+.fsel-nm{font-size:.88rem;font-weight:600;flex:1;}
+body.light .fsel-nm{color:#0a0a14;}
+.fsel-chk{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.22);transition:all .2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+body.light .fsel-chk{border-color:rgba(0,0,0,.2);}
+.fsel-item.on .fsel-chk{background:rgb(var(--ac));border-color:rgb(var(--ac));}
+.fsel-item.on .fsel-chk::after{content:'✓';font-size:11px;color:#fff;font-weight:800;}
+.fsel-btns{display:flex;gap:9px;}
+.fsel-cancel{flex:1;padding:11px;border-radius:13px;background:rgba(255,255,255,.08);border:none;color:#fff;font-size:.88rem;font-weight:700;cursor:pointer;}
+body.light .fsel-cancel{background:rgba(0,0,0,.07);color:#0a0a14;}
+.fsel-ok{flex:1;padding:11px;border-radius:13px;background:rgb(var(--ac));border:none;color:#fff;font-size:.88rem;font-weight:800;cursor:pointer;}
+
+/* FOLDER VIEW */
+.fm{position:fixed;inset:0;z-index:25000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);backdrop-filter:blur(28px);opacity:0;pointer-events:none;transition:opacity .3s;}
+.fm.on{opacity:1;pointer-events:all;}
+.fm-inner{background:rgba(var(--ac),.1);backdrop-filter:blur(60px);border-radius:34px;padding:22px;width:288px;max-height:80vh;overflow-y:auto;border:1px solid rgba(255,255,255,.1);animation:popIn .4s var(--sp);}
+.fm-t{text-align:center;font-weight:800;font-size:.9rem;margin-bottom:14px;opacity:.65;}
+body.light .fm-t{color:#0a0a14;}
+.fm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;}
+
+/* LANGUAGE SELECTOR */
+.lang-modal{position:fixed;inset:0;z-index:40000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(20px);opacity:0;pointer-events:none;transition:opacity .3s;}
+.lang-modal.on{opacity:1;pointer-events:all;}
+.lang-inner{background:rgba(18,18,32,.97);border-radius:28px;padding:24px;width:280px;border:1px solid rgba(255,255,255,.08);animation:popIn .35s var(--sp);}
+body.light .lang-inner{background:rgba(238,244,255,.98);border:1px solid rgba(0,0,0,.07);}
+.lang-title{font-size:1rem;font-weight:800;text-align:center;margin-bottom:18px;opacity:.75;}
+body.light .lang-title{color:#0a0a14;}
+.lang-opt{display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:16px;cursor:pointer;transition:background .15s;margin-bottom:6px;}
+.lang-opt:hover{background:rgba(var(--ac),.18);}
+.lang-opt.active{background:rgba(var(--ac),.28);border:1px solid rgba(var(--ac),.4);}
+.lang-flag{font-size:28px;}
+.lang-info{flex:1;}
+.lang-name{font-size:.92rem;font-weight:700;}
+body.light .lang-name{color:#0a0a14;}
+.lang-native{font-size:.78rem;opacity:.45;}
+body.light .lang-native{color:#0a0a14;}
+.lang-check{width:20px;height:20px;border-radius:50%;background:rgb(var(--ac));display:none;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;}
+.lang-opt.active .lang-check{display:flex;}
+
+/* ACCENT PICKER */
+.accent-modal{position:fixed;inset:0;z-index:40000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(20px);opacity:0;pointer-events:none;transition:opacity .3s;}
+.accent-modal.on{opacity:1;pointer-events:all;}
+.accent-inner{background:rgba(18,18,32,.97);border-radius:28px;padding:24px;width:min(340px,90vw);border:1px solid rgba(255,255,255,.08);animation:popIn .35s var(--sp);}
+body.light .accent-inner{background:rgba(238,244,255,.98);border:1px solid rgba(0,0,0,.07);}
+.accent-title{font-size:1rem;font-weight:800;text-align:center;margin-bottom:18px;opacity:.75;}
+body.light .accent-title{color:#0a0a14;}
+.accent-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px;}
+.accent-swatch{width:40px;height:40px;border-radius:50%;cursor:pointer;transition:transform .2s;position:relative;display:flex;align-items:center;justify-content:center;}
+.accent-swatch:hover{transform:scale(1.15);}
+.accent-swatch.active::after{content:'✓';font-size:14px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);}
+.accent-done{width:100%;padding:11px;border-radius:14px;background:rgb(var(--ac));border:none;color:#fff;font-size:.88rem;font-weight:800;cursor:pointer;}
+
+/* OVERLAY */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .28s;z-index:9999;}
+.ov.on{opacity:1;pointer-events:all;}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-120px);background:rgba(18,18,32,.97);backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:12px 18px;display:flex;align-items:center;gap:11px;z-index:60000;transition:transform .45s var(--sp);max-width:320px;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+body.light .toast{background:rgba(238,244,255,.97);border:1px solid rgba(0,0,0,.07);}
+.toast.on{transform:translateX(-50%) translateY(0);}
+.toast-ico{width:34px;height:34px;border-radius:10px;background:rgba(var(--ac),.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px;color:rgb(var(--ac));}
+.toast-t{font-size:.82rem;font-weight:800;}
+body.light .toast-t{color:#0a0a14;}
+.toast-m{font-size:.76rem;opacity:.55;margin-top:1px;}
+body.light .toast-m{color:#0a0a14;}
+
+#wallpaper-input,#media-picker,#icon-inp{display:none;}
+</style>
 </head>
-<body class="dark">
-    <div class="brightness-overlay" id="brightness-overlay"></div>
- 
-    <div class="status-bar">
-        <div class="time" id="time">12:00</div>
-        <div class="status-icons">
-            <span class="material-icons" onclick="toggleControlCenter()">tune</span>
-            <span class="material-icons">signal_cellular_alt</span>
-            <span class="material-icons">battery_full</span>
-        </div>
+<body>
+<div id="wp"></div>
+<div id="dim"></div>
+
+<!-- STATUS BAR -->
+<div class="sb">
+  <div class="sb-left">
+    <div class="batt">
+      <div class="batt-shell"><div class="batt-fill" id="batt-fill"></div></div>
+      <span class="batt-pct" id="batt-pct">75%</span>
     </div>
- 
-    <div class="home-screen" id="home-screen">
-        <div class="app-grid" id="app-grid"></div>
+    <span style="width:4px;display:inline-block;"></span>
+    <div class="sb-time" id="sb-time">00:00</div>
+  </div>
+  <div class="sb-right">
+    <span class="sb-ico">📶</span>
+    <span class="sb-ico" onclick="toggleCC()" title="Control Center">⊞</span>
+  </div>
+</div>
+
+<div class="home" id="home">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="dock" id="dock">
+  <div class="di" onclick="openApp('phone','Phone')">📞</div>
+  <div class="di" onclick="openApp('messages','Messages')">💬</div>
+  <div class="di" onclick="openApp('browser','Browser')">🌐</div>
+  <div class="di" onclick="openSettings()">⚙️</div>
+</div>
+
+<div class="hbtn" id="hbtn" onclick="goHome()">🏠</div>
+
+<div class="ctx" id="ctx">
+  <div class="ctx-i" onclick="openFolderSelect()"><span class="ico">📁</span><span data-t="newFolder">New Folder</span></div>
+  <div class="ctx-i" onclick="toggleIconSize()"><span class="ico">⊡</span><span id="ctx-icon-text">Large Icons</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-i" onclick="openSettings()"><span class="ico">⚙️</span><span data-t="settings">Settings</span></div>
+  <div class="ctx-i" onclick="openLang()"><span class="ico">🌐</span><span data-t="language">Language</span></div>
+</div>
+
+<!-- CONTROL CENTER -->
+<div class="panel" id="cc">
+  <div class="ph">
+    <div class="ph-t" data-t="controls">Controls</div>
+    <button class="ph-x" onclick="closePanel('cc')">✕</button>
+  </div>
+  <div class="pc">
+    <div class="cc-card">
+      <div class="cc-sl-lbl"><span class="ico">☀️</span><span data-t="brightness">Brightness</span></div>
+      <input type="range" id="br-sl" min="20" max="100" value="100" oninput="setBrightness(this.value)">
     </div>
- 
-    <div class="dock liquidGL" id="dock">
-        <div class="dock-icon" onclick="openApp('phone','Phone')"><span class="material-icons">phone</span></div>
-        <div class="dock-icon" onclick="openApp('messages','Messages')"><span class="material-icons">message</span></div>
-        <div class="dock-icon" onclick="openApp('browser','Browser')"><span class="material-icons">public</span></div>
-        <div class="dock-icon" onclick="openSettings()"><span class="material-icons">settings</span></div>
+    <div class="cc-card" style="margin-bottom:12px;">
+      <div class="cc-sl-lbl"><span class="ico">🔊</span><span data-t="volume">Volume</span></div>
+      <input type="range" id="vol-sl" min="0" max="100" value="70">
     </div>
- 
-    <div class="home-button" id="home-button" onclick="goHome()">
-        <span class="material-icons">home</span>
+    <div class="cc-tiles">
+      <div class="cc-tile" id="cc-wifi" onclick="toggleTile('cc-wifi')"><span>📶</span><span class="cc-tile-lbl">WiFi</span></div>
+      <div class="cc-tile" id="cc-bt" onclick="toggleTile('cc-bt')"><span>🔵</span><span class="cc-tile-lbl">Bluetooth</span></div>
+      <div class="cc-tile" id="cc-air" onclick="toggleTile('cc-air')"><span>✈️</span><span class="cc-tile-lbl" data-t="airplane">Airplane</span></div>
+      <div class="cc-tile" id="cc-dnd" onclick="toggleTile('cc-dnd')"><span>🔕</span><span class="cc-tile-lbl">DND</span></div>
+      <div class="cc-tile" id="cc-dark" onclick="toggleTheme()"><span>🌙</span><span class="cc-tile-lbl" data-t="darkMode">Dark Mode</span></div>
+      <div class="cc-tile" id="cc-hotspot" onclick="toggleTile('cc-hotspot')"><span>📡</span><span class="cc-tile-lbl">Hotspot</span></div>
     </div>
- 
-    <div class="context-menu" id="context-menu">
-        <div class="menu-item" onclick="createFolder()"><span class="material-icons">create_new_folder</span><span>New Folder</span></div>
-        <div class="menu-item" onclick="toggleIconSize()"><span class="material-icons">zoom_in</span><span id="icon-size-text">Large Icons</span></div>
-        <div class="menu-item" onclick="openSettings()"><span class="material-icons">settings</span><span>Settings</span></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="panel" id="settings">
+  <div class="ph">
+    <div class="ph-t" data-t="settings">Settings</div>
+    <button class="ph-x" onclick="closePanel('settings')">✕</button>
+  </div>
+  <div class="pc">
+    <!-- Appearance -->
+    <div class="sg">
+      <div class="sg-t" data-t="appearance">Appearance</div>
+      <div class="si" onclick="toggleTheme()">
+        <div class="si-l"><div class="si-ico" style="background:#6366f1;">🌙</div><div><div class="si-label" data-t="darkMode">Dark Mode</div><div class="si-sub" data-t="switchTheme">Switch theme</div></div></div>
+        <div class="tog on" id="dark-tog"></div>
+      </div>
+      <div class="si" onclick="toggleIconSize()">
+        <div class="si-l"><div class="si-ico" style="background:#8b5cf6;">⊡</div><div><div class="si-label" data-t="largeIcons">Large Icons</div><div class="si-sub" data-t="biggerIcons">Bigger icons</div></div></div>
+        <div class="tog" id="lg-tog"></div>
+      </div>
+      <div class="si" onclick="openAccentPicker()">
+        <div class="si-l"><div class="si-ico" style="background:rgb(var(--ac));">🎨</div><div><div class="si-label" data-t="accentColor">Accent Color</div><div class="si-sub" data-t="uiHighlight">UI highlight color</div></div></div>
+        <span class="si-arr">›</span>
+      </div>
+      <div class="si" onclick="document.getElementById('wallpaper-input').click()">
+        <div class="si-l"><div class="si-ico" style="background:#0ea5e9;">🖼️</div><div><div class="si-label" data-t="wallpaper">Wallpaper</div><div class="si-sub" data-t="uploadBg">Upload background</div></div></div>
+        <span class="si-arr">›</span>
+      </div>
     </div>
- 
-    <div class="control-center" id="control-center">
-        <div class="panel-header">
-            <h2>Controls</h2>
-            <button class="close-btn" onclick="toggleControlCenter()"><span class="material-icons">close</span></button>
-        </div>
-        <div class="panel-content">
-            <div class="brightness-control">
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-                    <span class="material-icons ct-accent-icon" style="font-size:24px;">brightness_6</span>
-                    <span style="font-weight:600;font-size:0.95rem;">Brightness</span>
-                </div>
-                <input type="range" class="brightness-slider" id="brightness-slider" min="20" max="100" value="100" oninput="adjustBrightness(this.value)">
-            </div>
-            <div class="control-grid">
-                <div class="control-tile" onclick="this.classList.toggle('active')">
-                    <span class="material-icons ct-accent-icon">wifi</span>
-                    <span class="label">WiFi</span>
-                </div>
-                <div class="control-tile" onclick="this.classList.toggle('active')">
-                    <span class="material-icons ct-accent-icon">bluetooth</span>
-                    <span class="label">Bluetooth</span>
-                </div>
-                <div class="control-tile" onclick="this.classList.toggle('active')">
-                    <span class="material-icons ct-accent-icon">flight</span>
-                    <span class="label">Airplane</span>
-                </div>
-                <div class="control-tile" onclick="this.classList.toggle('active')">
-                    <span class="material-icons ct-accent-icon">do_not_disturb</span>
-                    <span class="label">DND</span>
-                </div>
-            </div>
-        </div>
+    <!-- Language -->
+    <div class="sg">
+      <div class="sg-t" data-t="languageSettings">Language</div>
+      <div class="si" onclick="openLang()">
+        <div class="si-l"><div class="si-ico" style="background:#06b6d4;">🌐</div><div><div class="si-label" data-t="language">Language</div><div class="si-sub" id="curr-lang-label">English</div></div></div>
+        <span class="si-arr">›</span>
+      </div>
     </div>
- 
-    <div class="settings-panel" id="settings-panel">
-        <div class="panel-header">
-            <h2>Settings</h2>
-            <button class="close-btn" onclick="closeSettings()"><span class="material-icons">close</span></button>
-        </div>
-        <div class="panel-content">
-            <div class="setting-group">
-                <div class="setting-group-title">Appearance</div>
-                <div class="setting-item" onclick="toggleTheme()">
-                    <div class="setting-info"><span class="material-icons">brightness_6</span><div><div class="setting-label">Dark Mode</div><div class="setting-description">Switch themes</div></div></div>
-                    <div class="toggle-switch active" id="theme-toggle"></div>
-                </div>
-                <div class="setting-item" onclick="toggleIconSize()">
-                    <div class="setting-info"><span class="material-icons">photo_size_select_large</span><div><div class="setting-label">Large Icons</div><div class="setting-description">Bigger icons</div></div></div>
-                    <div class="toggle-switch" id="icon-size-toggle"></div>
-                </div>
-            </div>
-            <div class="setting-group">
-                <div class="setting-group-title">Display</div>
-                <div class="setting-item" onclick="document.getElementById('wallpaper-input').click()">
-                    <div class="setting-info"><span class="material-icons">wallpaper</span><div><div class="setting-label">Custom Wallpaper</div><div class="setting-description">Upload background image</div></div></div>
-                    <span class="material-icons" style="opacity:0.4;">chevron_right</span>
-                </div>
-            </div>
-            <div class="setting-group">
-                <div class="setting-group-title">Privacy</div>
-                <div class="setting-item" onclick="togglePrivacy(this,'camera')">
-                    <div class="setting-info"><span class="material-icons">camera_alt</span><div><div class="setting-label">Camera</div><div class="setting-description">Camera permissions</div></div></div>
-                    <div class="toggle-switch active" id="camera-toggle"></div>
-                </div>
-            </div>
-            <div class="setting-group">
-                <div class="setting-group-title">About</div>
-                <div class="setting-item">
-                    <div class="setting-info"><span class="material-icons">info</span><div><div class="setting-label">SerenityOS</div><div class="setting-description">Version 1.2 Alpha</div></div></div>
-                </div>
-            </div>
-        </div>
+    <!-- Navigation -->
+    <div class="sg">
+      <div class="sg-t" data-t="navigation">Navigation</div>
+      <div class="si" onclick="toggleNavMode()">
+        <div class="si-l"><div class="si-ico" style="background:#f59e0b;">👆</div><div><div class="si-label" data-t="swipeGestures">Swipe Gestures</div><div class="si-sub" id="nav-sub" data-t="swipeGesturesSub">Swipe up to go home</div></div></div>
+        <div class="tog on" id="nav-tog"></div>
+      </div>
     </div>
- 
-    <div class="app-fullscreen" id="app-fullscreen">
-        <div class="app-header">
-            <div class="app-title" id="app-title">App</div>
-        </div>
-        <div class="app-content" id="app-content"></div>
+    <!-- Display -->
+    <div class="sg">
+      <div class="sg-t" data-t="display">Display</div>
+      <div class="si">
+        <div class="si-l"><div class="si-ico" style="background:#f59e0b;">☀️</div><div><div class="si-label" data-t="autoBrightness">Auto Brightness</div></div></div>
+        <div class="tog on"></div>
+      </div>
+      <div class="si">
+        <div class="si-l"><div class="si-ico" style="background:#10b981;">📟</div><div><div class="si-label">Always On Display</div></div></div>
+        <div class="tog"></div>
+      </div>
+      <div class="si">
+        <div class="si-l"><div class="si-ico" style="background:#3b82f6;">✨</div><div><div class="si-label" data-t="animations">Animations</div><div class="si-sub" data-t="motionEffects">Motion effects</div></div></div>
+        <div class="tog on"></div>
+      </div>
     </div>
- 
-    <div class="folder-modal" id="folder-modal" onclick="closeFolderModal(event)">
-        <div class="folder-modal-inner">
-            <div class="folder-modal-title" id="folder-modal-title">Folder</div>
-            <div class="folder-modal-grid" id="folder-modal-grid"></div>
-        </div>
+    <!-- Security -->
+    <div class="sg">
+      <div class="sg-t" data-t="security">Security</div>
+      <div class="si" onclick="changePIN()">
+        <div class="si-l"><div class="si-ico" style="background:#ef4444;">🔒</div><div><div class="si-label" data-t="screenLock">Screen Lock PIN</div><div class="si-sub" id="pin-sub" data-t="notSet">Not set</div></div></div>
+        <span class="si-val" data-t="change">Change</span>
+      </div>
+      <div class="si">
+        <div class="si-l"><div class="si-ico" style="background:#f97316;">👆</div><div><div class="si-label" data-t="biometrics">Biometrics</div><div class="si-sub">Fingerprint & Face ID</div></div></div>
+        <div class="tog"></div>
+      </div>
+      <div class="si">
+        <div class="si-l"><div class="si-ico" style="background:#a855f7;">🛡️</div><div><div class="si-label">Two-Factor Auth</div></div></div>
+        <div class="tog"></div>
+      </div>
     </div>
- 
-    <div class="overlay" id="overlay" onclick="closeAll()"></div>
-    <input type="file" id="wallpaper-input" accept="image/*" onchange="loadCustomWallpaper(this)">
-    <input type="file" id="media-picker" accept="image/*,video/*" multiple>
- 
-    <script>
-        const myApps=[
-            {name:'Camera',icon:'camera_alt',id:'camera'},
-            {name:'Gallery',icon:'photo_library',id:'gallery'},
-            {name:'Music',icon:'music_note',id:'music'},
-            {name:'Files',icon:'folder',id:'files'},
-            {name:'Calendar',icon:'calendar_today',id:'calendar'},
-            {name:'Clock',icon:'schedule',id:'clock'},
-            {name:'Calculator',icon:'calculate',id:'calculator'},
-            {name:'Notes',icon:'note',id:'notes'},
-            {name:'Contacts',icon:'contacts',id:'contacts'},
-            {name:'Weather',icon:'wb_sunny',id:'weather'},
-            {name:'Maps',icon:'map',id:'maps'},
-            {name:'Email',icon:'email',id:'email'}
-        ];
- 
-        let largeIconsEnabled=false,longPressTimer,permissions={camera:true};
-        let stream,recorder,chunks=[];
-        let folders=JSON.parse(localStorage.getItem('folders')||'[]');
-        let calcExpr='',calcResult='0';
- 
-        // Global accent - NEVER hardcoded blue
-        let accentR=180,accentG=180,accentB=220;
- 
-        function setAccent(r,g,b){
-            accentR=r; accentG=g; accentB=b;
-            document.documentElement.style.setProperty('--accent',`${r}, ${g}, ${b}`);
-            document.documentElement.style.setProperty('--accent-hex',`rgb(${r},${g},${b})`);
+    <!-- Privacy -->
+    <div class="sg">
+      <div class="sg-t" data-t="privacy">Privacy</div>
+      <div class="si" onclick="this.querySelector('.tog').classList.toggle('on')">
+        <div class="si-l"><div class="si-ico" style="background:#06b6d4;">📷</div><div><div class="si-label" data-t="camera">Camera</div></div></div>
+        <div class="tog on" id="cam-tog"></div>
+      </div>
+      <div class="si" onclick="this.querySelector('.tog').classList.toggle('on')">
+        <div class="si-l"><div class="si-ico" style="background:#84cc16;">📍</div><div><div class="si-label" data-t="location">Location</div></div></div>
+        <div class="tog on"></div>
+      </div>
+      <div class="si" onclick="this.querySelector('.tog').classList.toggle('on')">
+        <div class="si-l"><div class="si-ico" style="background:#f43f5e;">🎙️</div><div><div class="si-label" data-t="microphone">Microphone</div></div></div>
+        <div class="tog on"></div>
+      </div>
+      <div class="si" onclick="this.querySelector('.tog').classList.toggle('on')">
+        <div class="si-l"><div class="si-ico" style="background:#475569;">📊</div><div><div class="si-label" data-t="diagnostics">Send Diagnostics</div></div></div>
+        <div class="tog on"></div>
+      </div>
+    </div>
+    <!-- Network -->
+    <div class="sg">
+      <div class="sg-t" data-t="network">Network</div>
+      <div class="si" onclick="this.querySelector('.tog').classList.toggle('on')">
+        <div class="si-l"><div class="si-ico" style="background:#0ea5e9;">📶</div><div><div class="si-label">WiFi</div><div class="si-sub">societyNet_5G</div></div></div>
+        <div class="tog on"></div>
+      </div>
+      <div class="si" onclick="this.querySelector('.tog').classList.toggle('on')">
+        <div class="si-l"><div class="si-ico" style="background:#6366f1;">🔵</div><div><div class="si-label">Bluetooth</div><div class="si-sub" data-t="devicesConnected">2 devices</div></div></div>
+        <div class="tog on"></div>
+      </div>
+      <div class="si" onclick="this.querySelector('.tog').classList.toggle('on')">
+        <div class="si-l"><div class="si-ico" style="background:#f59e0b;">📡</div><div><div class="si-label">Hotspot</div></div></div>
+        <div class="tog"></div>
+      </div>
+      <div class="si" onclick="this.querySelector('.tog').classList.toggle('on')">
+        <div class="si-l"><div class="si-ico" style="background:#10b981;">🔐</div><div><div class="si-label">VPN</div></div></div>
+        <div class="tog"></div>
+      </div>
+    </div>
+    <!-- Storage -->
+    <div class="sg">
+      <div class="sg-t" data-t="storage">Storage</div>
+      <div class="si">
+        <div class="si-l"><div class="si-ico" style="background:#64748b;">💾</div><div><div class="si-label" data-t="deviceStorage">Device Storage</div><div class="si-sub">12.4 GB of 64 GB</div></div></div>
+        <span class="si-val">19%</span>
+      </div>
+      <div class="si" onclick="this.querySelector('.tog').classList.toggle('on')">
+        <div class="si-l"><div class="si-ico" style="background:#0ea5e9;">☁️</div><div><div class="si-label">societyCloud</div><div class="si-sub" data-t="syncBackup">Sync & backup</div></div></div>
+        <div class="tog on"></div>
+      </div>
+      <div class="si" onclick="if(confirm(T('clearCacheConfirm')))showToast('societyOS',T('cacheCleared'),'✅')">
+        <div class="si-l"><div class="si-ico" style="background:#ef4444;">🧹</div><div><div class="si-label" data-t="clearCache">Clear Cache</div><div class="si-sub">Free up 2.1 GB</div></div></div>
+        <span class="si-arr">›</span>
+      </div>
+    </div>
+    <!-- About -->
+    <div class="sg">
+      <div class="sg-t" data-t="about">About</div>
+      <div class="si" onclick="openApp('about','societyOS')">
+        <div class="si-l"><div class="si-ico" style="background:linear-gradient(135deg,#667eea,#764ba2);">🌍</div><div><div class="si-label">societyOS</div><div class="si-sub">v1.3 Alpha · Open Source</div></div></div>
+        <span class="si-arr">›</span>
+      </div>
+      <div class="si" onclick="if(confirm(T('resetConfirm'))){localStorage.clear();location.reload();}">
+        <div class="si-l"><div class="si-ico" style="background:#dc2626;">🔄</div><div><div class="si-label" data-t="resetEverything">Reset Everything</div><div class="si-sub" data-t="factoryReset">Factory reset</div></div></div>
+        <span class="si-arr">›</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP FULLSCREEN -->
+<div class="af" id="af">
+  <div class="af-hd"><div class="af-title" id="af-title">App</div></div>
+  <div class="af-body" id="af-body"></div>
+</div>
+
+<!-- FOLDER VIEW -->
+<div class="fm" id="fm" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="fm-inner">
+    <div class="fm-t" id="fm-t">Folder</div>
+    <div class="fm-grid" id="fm-grid"></div>
+  </div>
+</div>
+
+<!-- FOLDER SELECT -->
+<div class="fsel" id="fsel" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="fsel-inner">
+    <div class="fsel-t" data-t="newFolder">New Folder</div>
+    <input class="fsel-inp" id="fsel-name" type="text" placeholder="Folder name" value="Folder">
+    <div class="fsel-list" id="fsel-list"></div>
+    <div class="fsel-btns">
+      <button class="fsel-cancel" onclick="document.getElementById('fsel').classList.remove('on')" data-t="cancel">Cancel</button>
+      <button class="fsel-ok" onclick="confirmFolder()" data-t="create">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- LANGUAGE MODAL -->
+<div class="lang-modal" id="lang-modal" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="lang-inner">
+    <div class="lang-title" data-t="chooseLanguage">Choose Language</div>
+    <div class="lang-opt" data-lang="en" onclick="setLang('en')">
+      <div class="lang-flag">🇺🇸</div>
+      <div class="lang-info"><div class="lang-name">English</div><div class="lang-native">English</div></div>
+      <div class="lang-check">✓</div>
+    </div>
+    <div class="lang-opt" data-lang="es" onclick="setLang('es')">
+      <div class="lang-flag">🇪🇸</div>
+      <div class="lang-info"><div class="lang-name">Spanish</div><div class="lang-native">Español</div></div>
+      <div class="lang-check">✓</div>
+    </div>
+    <div class="lang-opt" data-lang="pt" onclick="setLang('pt')">
+      <div class="lang-flag">🇧🇷</div>
+      <div class="lang-info"><div class="lang-name">Portuguese</div><div class="lang-native">Português</div></div>
+      <div class="lang-check">✓</div>
+    </div>
+    <button style="width:100%;margin-top:14px;padding:11px;border-radius:14px;background:rgb(var(--ac));border:none;color:#fff;font-size:.88rem;font-weight:800;cursor:pointer;" onclick="document.getElementById('lang-modal').classList.remove('on')" data-t="done">Done</button>
+  </div>
+</div>
+
+<!-- ACCENT PICKER -->
+<div class="accent-modal" id="accent-modal" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="accent-inner">
+    <div class="accent-title" data-t="accentColor">Accent Color</div>
+    <div class="accent-grid" id="accent-grid"></div>
+    <button class="accent-done" onclick="document.getElementById('accent-modal').classList.remove('on')" data-t="done">Done</button>
+  </div>
+</div>
+
+<div class="ov" id="ov" onclick="closeAll()"></div>
+<div class="toast" id="toast">
+  <div class="toast-ico" id="toast-ico">💬</div>
+  <div><div class="toast-t" id="toast-t">societyOS</div><div class="toast-m" id="toast-m">Message</div></div>
+</div>
+<input type="file" id="wallpaper-input" accept="image/*" onchange="loadWallpaper(this)">
+<input type="file" id="media-picker" accept="image/*,video/*" multiple>
+<input type="file" id="icon-inp" accept="image/*" onchange="handleIconFile(this)">
+
+<script>
+// ═══════════════════════════════════════════════
+//  TRANSLATIONS
+// ═══════════════════════════════════════════════
+const LANGS = {
+  en:{
+    controls:'Controls',brightness:'Brightness',volume:'Volume',airplane:'Airplane',darkMode:'Dark Mode',
+    appearance:'Appearance',largeIcons:'Large Icons',biggerIcons:'Bigger icons without labels',
+    accentColor:'Accent Color',uiHighlight:'UI highlight color',wallpaper:'Wallpaper',uploadBg:'Upload background',
+    languageSettings:'Language',language:'Language',navigation:'Navigation',
+    swipeGestures:'Swipe Gestures',swipeGesturesSub:'Swipe up to go home',
+    btnNavSub:'Button to go home',
+    display:'Display',autoBrightness:'Auto Brightness',animations:'Animations',motionEffects:'Motion effects',
+    security:'Security',screenLock:'Screen Lock PIN',notSet:'Not set',change:'Change',biometrics:'Biometrics',
+    privacy:'Privacy',camera:'Camera',location:'Location',microphone:'Microphone',diagnostics:'Send Diagnostics',
+    network:'Network',devicesConnected:'2 devices connected',storage:'Storage',deviceStorage:'Device Storage',
+    syncBackup:'Sync & backup',clearCache:'Clear Cache',clearCacheConfirm:'Clear all cache?',cacheCleared:'Cache cleared!',
+    about:'About',resetEverything:'Reset Everything',factoryReset:'Factory reset',
+    resetConfirm:'Reset all settings?',
+    settings:'Settings',newFolder:'New Folder',cancel:'Cancel',create:'Create',done:'Done',
+    chooseLanguage:'Choose Language',switchTheme:'Switch theme',
+    addApp:'Add Web App',appName:'App Name',url:'URL',iconOptional:'Icon (optional)',
+    tapUpload:'Tap to upload icon',orLeave:'or leave empty for default',
+    addToHome:'Add to Home Screen',webAppNote:'Web apps open in a new tab (browser security).',
+    noMedia:'No media yet',gallery:'Gallery',
+  },
+  es:{
+    controls:'Controles',brightness:'Brillo',volume:'Volumen',airplane:'Modo Avión',darkMode:'Modo Oscuro',
+    appearance:'Apariencia',largeIcons:'Iconos Grandes',biggerIcons:'Iconos más grandes sin etiquetas',
+    accentColor:'Color de Acento',uiHighlight:'Color de interfaz',wallpaper:'Fondo de Pantalla',uploadBg:'Subir imagen de fondo',
+    languageSettings:'Idioma',language:'Idioma',navigation:'Navegación',
+    swipeGestures:'Gestos Deslizantes',swipeGesturesSub:'Deslizá hacia arriba para ir al inicio',
+    btnNavSub:'Botón para ir al inicio',
+    display:'Pantalla',autoBrightness:'Brillo Automático',animations:'Animaciones',motionEffects:'Efectos de movimiento',
+    security:'Seguridad',screenLock:'PIN de Bloqueo',notSet:'No configurado',change:'Cambiar',biometrics:'Biometría',
+    privacy:'Privacidad',camera:'Cámara',location:'Ubicación',microphone:'Micrófono',diagnostics:'Enviar Diagnósticos',
+    network:'Red',devicesConnected:'2 dispositivos conectados',storage:'Almacenamiento',deviceStorage:'Almacenamiento',
+    syncBackup:'Sincronizar y respaldar',clearCache:'Limpiar Caché',clearCacheConfirm:'¿Limpiar todo el caché?',cacheCleared:'¡Caché limpiado!',
+    about:'Acerca de',resetEverything:'Restablecer Todo',factoryReset:'Restablecimiento de fábrica',
+    resetConfirm:'¿Restablecer todos los ajustes?',
+    settings:'Ajustes',newFolder:'Nueva Carpeta',cancel:'Cancelar',create:'Crear',done:'Listo',
+    chooseLanguage:'Elegir Idioma',switchTheme:'Cambiar tema',
+    addApp:'Agregar App Web',appName:'Nombre de la App',url:'URL',iconOptional:'Ícono (opcional)',
+    tapUpload:'Toca para subir ícono',orLeave:'o dejalo vacío para el default',
+    addToHome:'Agregar al Inicio',webAppNote:'Las apps web abren en nueva pestaña (seguridad del navegador).',
+    noMedia:'Sin fotos aún',gallery:'Galería',
+  },
+  pt:{
+    controls:'Controles',brightness:'Brilho',volume:'Volume',airplane:'Modo Avião',darkMode:'Modo Escuro',
+    appearance:'Aparência',largeIcons:'Ícones Grandes',biggerIcons:'Ícones maiores sem rótulos',
+    accentColor:'Cor de Destaque',uiHighlight:'Cor de destaque da interface',wallpaper:'Papel de Parede',uploadBg:'Enviar imagem de fundo',
+    languageSettings:'Idioma',language:'Idioma',navigation:'Navegação',
+    swipeGestures:'Gestos Deslizantes',swipeGesturesSub:'Deslize para cima para ir ao início',
+    btnNavSub:'Botão para ir ao início',
+    display:'Tela',autoBrightness:'Brilho Automático',animations:'Animações',motionEffects:'Efeitos de movimento',
+    security:'Segurança',screenLock:'PIN de Bloqueio',notSet:'Não definido',change:'Alterar',biometrics:'Biometria',
+    privacy:'Privacidade',camera:'Câmera',location:'Localização',microphone:'Microfone',diagnostics:'Enviar Diagnósticos',
+    network:'Rede',devicesConnected:'2 dispositivos conectados',storage:'Armazenamento',deviceStorage:'Armazenamento',
+    syncBackup:'Sincronizar e fazer backup',clearCache:'Limpar Cache',clearCacheConfirm:'Limpar todo o cache?',cacheCleared:'Cache limpo!',
+    about:'Sobre',resetEverything:'Redefinir Tudo',factoryReset:'Redefinição de fábrica',
+    resetConfirm:'Redefinir todas as configurações?',
+    settings:'Configurações',newFolder:'Nova Pasta',cancel:'Cancelar',create:'Criar',done:'Pronto',
+    chooseLanguage:'Escolher Idioma',switchTheme:'Trocar tema',
+    addApp:'Adicionar App Web',appName:'Nome do App',url:'URL',iconOptional:'Ícone (opcional)',
+    tapUpload:'Toque para enviar ícone',orLeave:'ou deixe vazio para o padrão',
+    addToHome:'Adicionar à Tela Inicial',webAppNote:'Apps web abrem em nova aba (segurança do navegador).',
+    noMedia:'Sem mídia ainda',gallery:'Galeria',
+  }
+};
+let lang = localStorage.getItem('soc_lang') || 'en';
+function T(k){ return LANGS[lang]?.[k] || LANGS.en[k] || k; }
+function applyLang(){
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    const k=el.getAttribute('data-t');
+    el.textContent=T(k);
+  });
+  document.getElementById('curr-lang-label').textContent =
+    lang==='en'?'English':lang==='es'?'Español':'Português';
+}
+
+// ═══════════════════════════════════════════════
+//  ACCENT COLORS - FULL PALETTE
+// ═══════════════════════════════════════════════
+const ACCENTS = [
+  // Blues
+  {v:'99,149,255',label:'Blue'},
+  {v:'59,130,246',label:'Ocean Blue'},
+  {v:'56,189,248',label:'Sky'},
+  {v:'6,182,212',label:'Cyan'},
+  // Purples
+  {v:'168,85,247',label:'Purple'},
+  {v:'139,92,246',label:'Violet'},
+  {v:'99,102,241',label:'Indigo'},
+  {v:'217,70,239',label:'Fuchsia'},
+  // Pinks & Reds
+  {v:'236,72,153',label:'Pink'},
+  {v:'244,63,94',label:'Rose'},
+  {v:'239,68,68',label:'Red'},
+  {v:'249,115,22',label:'Orange'},
+  // Warm
+  {v:'245,158,11',label:'Amber'},
+  {v:'234,179,8',label:'Yellow'},
+  {v:'132,204,22',label:'Lime'},
+  {v:'34,197,94',label:'Green'},
+  // Teals & Earthy
+  {v:'20,184,166',label:'Teal'},
+  {v:'16,185,129',label:'Emerald'},
+  {v:'161,98,7',label:'Brown'},
+  {v:'100,116,139',label:'Slate'},
+  // Neutrals
+  {v:'156,163,175',label:'Gray'},
+  {v:'255,255,255',label:'White'},
+  {v:'120,120,120',label:'Dark Gray'},
+  {v:'255,200,80',label:'Gold'},
+];
+
+function buildAccentGrid(){
+  const g=document.getElementById('accent-grid'); g.innerHTML='';
+  const cur=localStorage.getItem('soc_accent')||'99,149,255';
+  ACCENTS.forEach(ac=>{
+    const b=document.createElement('div');
+    b.className='accent-swatch'+(ac.v===cur?' active':'');
+    b.style.background=`rgb(${ac.v})`;
+    b.style.border=ac.v==='255,255,255'?'1.5px solid rgba(0,0,0,.15)':'none';
+    b.title=ac.label;
+    b.onclick=()=>{
+      setAccentFromStr(ac.v);
+      localStorage.setItem('soc_accent',ac.v);
+      document.querySelectorAll('.accent-swatch').forEach(s=>s.classList.remove('active'));
+      b.classList.add('active');
+    };
+    g.appendChild(b);
+  });
+}
+function openAccentPicker(){ buildAccentGrid(); document.getElementById('accent-modal').classList.add('on'); }
+
+// ═══════════════════════════════════════════════
+//  APP ICONS (real emoji icons, no text fallback)
+// ═══════════════════════════════════════════════
+const APP_ICONS = {
+  camera:'📷', gallery:'🖼️', calculator:'🧮', notes:'📝',
+  weather:'🌤️', music:'🎵', files:'📂', calendar:'📅',
+  clock:'🕐', maps:'🗺️', email:'📧', contacts:'👥',
+  about:'ℹ️', add_app:'➕', phone:'📞', messages:'💬',
+  browser:'🌐', settings:'⚙️'
+};
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let acR=99,acG=149,acB=255;
+let largeIcons=false;
+let camFacing='environment',camMode='photo';
+let stream=null,recorder=null,chunks=[];
+let pendingIconUrl=null;
+let folderSel=[];
+let notes=JSON.parse(localStorage.getItem('soc_notes')||'[]');
+let useSwipe=true;
+
+const builtins=[
+  {id:'camera',  name:'Camera',     emoji:'📷'},
+  {id:'gallery', name:'Gallery',    emoji:'🖼️'},
+  {id:'calculator',name:'Calculator',emoji:'🧮'},
+  {id:'notes',   name:'Notes',      emoji:'📝'},
+  {id:'weather', name:'Weather',    emoji:'🌤️'},
+  {id:'music',   name:'Music',      emoji:'🎵'},
+  {id:'files',   name:'Files',      emoji:'📂'},
+  {id:'calendar',name:'Calendar',   emoji:'📅'},
+  {id:'clock',   name:'Clock',      emoji:'🕐'},
+  {id:'maps',    name:'Maps',       emoji:'🗺️'},
+  {id:'email',   name:'Email',      emoji:'📧'},
+  {id:'contacts',name:'Contacts',   emoji:'👥'},
+  {id:'about',   name:'About',      emoji:'ℹ️'},
+  {id:'add_app', name:'Add',        emoji:'➕'},
+];
+let customApps=JSON.parse(localStorage.getItem('soc_customs')||'[]');
+let myApps=[...builtins,...customApps];
+let folders=JSON.parse(localStorage.getItem('soc_folders')||'[]');
+
+// ═══════════════════════════════════════════════
+//  TIME + BATTERY
+// ═══════════════════════════════════════════════
+function tickTime(){
+  const n=new Date();
+  const el=document.getElementById('sb-time');
+  if(el)el.textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+}
+tickTime(); setInterval(tickTime,1000);
+
+function setBattUI(lvl){
+  const f=document.getElementById('batt-fill'),p=document.getElementById('batt-pct');
+  if(f){f.style.width=lvl+'%';f.style.background=lvl>20?'#34d399':'#ef4444';}
+  if(p)p.textContent=Math.round(lvl)+'%';
+}
+if(navigator.getBattery){
+  navigator.getBattery().then(b=>{
+    setBattUI(b.level*100);
+    b.addEventListener('levelchange',()=>setBattUI(b.level*100));
+  }).catch(()=>setBattUI(75));
+}else setBattUI(75);
+
+// ═══════════════════════════════════════════════
+//  BUILD GRID
+// ═══════════════════════════════════════════════
+function iconHTML(app){
+  if(app.iconImg) return `<img class="user-icon-img" src="${app.iconImg}">`;
+  return `<span class="app-icon-emoji">${app.emoji||'📱'}</span>`;
+}
+
+function buildGrid(){
+  const g=document.getElementById('grid'); g.innerHTML='';
+  const inF=folders.flatMap(f=>f.apps);
+
+  folders.forEach((folder,fi)=>{
+    const w=document.createElement('div'); w.className='fi-wrap';
+    w.onclick=()=>openFolder(fi);
+    const ic=document.createElement('div'); ic.className='fi-ic';
+    folder.apps.slice(0,4).forEach(id=>{
+      const app=myApps.find(x=>x.id===id);
+      if(app){const m=document.createElement('div');m.className='fi-mini';m.textContent=app.emoji||'📱';ic.appendChild(m);}
+    });
+    const nm=document.createElement('div');nm.className='ai-nm';nm.textContent=folder.name;
+    w.appendChild(ic);w.appendChild(nm);g.appendChild(w);
+  });
+
+  myApps.filter(a=>!inF.includes(a.id)).forEach((app,i)=>{
+    const el=document.createElement('div');
+    el.className='ai'; el.style.animationDelay=`${i*0.038}s`;
+    el.onclick=()=>openApp(app.id,app.name);
+    el.innerHTML=`<div class="ai-ic">${iconHTML(app)}</div><div class="ai-nm">${app.name}</div>`;
+    g.appendChild(el);
+  });
+  applyColors();
+}
+
+// Long press
+const homeEl=document.getElementById('home');
+let lpTimer=null;
+const LP=ev=>{
+  const t=ev.touches?ev.touches[0]:ev;
+  if(t.target===homeEl||t.target.closest('.grid'))
+    lpTimer=setTimeout(()=>showCtx(t),520);
+};
+homeEl.addEventListener('touchstart',LP,{passive:true});
+homeEl.addEventListener('touchend',()=>clearTimeout(lpTimer),{passive:true});
+homeEl.addEventListener('touchmove',()=>clearTimeout(lpTimer),{passive:true});
+homeEl.addEventListener('mousedown',LP);
+homeEl.addEventListener('mouseup',()=>clearTimeout(lpTimer));
+homeEl.addEventListener('mousemove',()=>clearTimeout(lpTimer));
+
+function showCtx(t){
+  const m=document.getElementById('ctx'),ov=document.getElementById('ov');
+  document.querySelectorAll('.ai,.fi-wrap').forEach(e=>e.classList.add('shake'));
+  m.classList.add('on'); ov.classList.add('on');
+  const x=t.clientX||t.pageX, y=t.clientY||t.pageY;
+  m.style.left=`${Math.min(x,innerWidth-220)}px`;
+  m.style.top=`${Math.min(y,innerHeight-200)}px`;
+}
+
+// ═══════════════════════════════════════════════
+//  FOLDERS
+// ═══════════════════════════════════════════════
+function openFolderSelect(){
+  closeAll(); folderSel=[];
+  document.getElementById('fsel-name').value=T('newFolder')||'Folder';
+  const list=document.getElementById('fsel-list'); list.innerHTML='';
+  const inF=folders.flatMap(f=>f.apps);
+  myApps.filter(a=>!inF.includes(a.id)&&a.id!=='add_app').forEach(app=>{
+    const item=document.createElement('div'); item.className='fsel-item'; item.dataset.id=app.id;
+    item.innerHTML=`<div class="fsel-ico">${app.emoji||'📱'}</div><div class="fsel-nm">${app.name}</div><div class="fsel-chk"></div>`;
+    item.onclick=()=>{
+      item.classList.toggle('on');
+      if(item.classList.contains('on')) folderSel.push(app.id);
+      else folderSel=folderSel.filter(x=>x!==app.id);
+    };
+    list.appendChild(item);
+  });
+  document.getElementById('fsel').classList.add('on');
+}
+
+function confirmFolder(){
+  const name=document.getElementById('fsel-name').value.trim()||T('newFolder');
+  if(folderSel.length<2){showToast('societyOS','Select at least 2 apps','⚠️');return;}
+  folders.push({name,apps:folderSel});
+  localStorage.setItem('soc_folders',JSON.stringify(folders));
+  document.getElementById('fsel').classList.remove('on');
+  buildGrid();
+}
+
+function openFolder(fi){
+  const f=folders[fi];
+  document.getElementById('fm-t').textContent=f.name;
+  const gr=document.getElementById('fm-grid'); gr.innerHTML='';
+  f.apps.forEach(id=>{
+    const app=myApps.find(a=>a.id===id); if(!app)return;
+    const el=document.createElement('div'); el.className='ai';
+    el.onclick=()=>{document.getElementById('fm').classList.remove('on');setTimeout(()=>openApp(app.id,app.name),200);};
+    el.innerHTML=`<div class="ai-ic">${iconHTML(app)}</div><div class="ai-nm">${app.name}</div>`;
+    gr.appendChild(el);
+  });
+  document.getElementById('fm').classList.add('on');
+  applyColors();
+}
+
+// ═══════════════════════════════════════════════
+//  NAV MODE (swipe vs button)
+// ═══════════════════════════════════════════════
+function toggleNavMode(){
+  useSwipe=!useSwipe;
+  document.getElementById('nav-tog').classList.toggle('on',useSwipe);
+  document.getElementById('nav-sub').textContent=useSwipe?T('swipeGesturesSub'):T('btnNavSub');
+  localStorage.setItem('soc_navMode',useSwipe?'swipe':'btn');
+  // If button mode, always show home button when in app
+  if(!useSwipe && document.getElementById('af').classList.contains('in')){
+    setHomeBtn(true);
+  }
+}
+
+// Swipe up gesture
+let swipeStartY=0;
+document.addEventListener('touchstart',e=>{swipeStartY=e.touches[0].clientY;},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(!useSwipe)return;
+  const dy=swipeStartY-e.changedTouches[0].clientY;
+  if(dy>80&&document.getElementById('af').classList.contains('in')) goHome();
+},{passive:true});
+
+// ═══════════════════════════════════════════════
+//  HOME / APP
+// ═══════════════════════════════════════════════
+function setHomeBtn(v){
+  document.getElementById('hbtn').classList.toggle('on',v);
+  document.getElementById('dock').classList.toggle('hidden',v);
+}
+
+function goHome(){
+  const af=document.getElementById('af');
+  af.classList.remove('in'); af.classList.add('out');
+  af.addEventListener('animationend',()=>{
+    af.style.display='none'; af.classList.remove('out');
+    setHomeBtn(false);
+    if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+    if(recorder){try{recorder.stop();}catch(e){}recorder=null;}
+  },{once:true});
+}
+
+async function openApp(id,name){
+  const af=document.getElementById('af');
+  const body=document.getElementById('af-body');
+  const title=document.getElementById('af-title');
+  af.style.background=`rgb(${Math.max(acR-55,4)},${Math.max(acG-55,4)},${Math.max(acB-35,8)})`;
+  title.textContent=name;
+  body.style.padding=''; body.innerHTML='';
+
+  switch(id){
+    case 'camera':    await renderCam(body); break;
+    case 'gallery':   renderGallery(body);   break;
+    case 'calculator':renderCalc(body);       break;
+    case 'notes':     renderNotes(body);      break;
+    case 'weather':   renderWeather(body);    break;
+    case 'add_app':   renderAdd(body);        break;
+    case 'about':     renderAbout(body);      break;
+    default:
+      if(id.startsWith('custom_')){
+        const app=customApps.find(a=>a.id===id);
+        if(app?.url){
+          // Open in new tab - iframes block due to X-Frame-Options
+          window.open(app.url,'_blank');
+          body.innerHTML=`<div style="padding:30px;text-align:center;opacity:.6;">
+            <div style="font-size:48px;margin-bottom:16px;">🌐</div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:8px;">${name}</div>
+            <div style="font-size:.82rem;opacity:.6;margin-bottom:20px;">${app.url}</div>
+            <button onclick="window.open('${app.url}','_blank')" style="padding:12px 24px;border-radius:14px;background:rgb(var(--ac));border:none;color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;">🔗 Open in Browser</button>
+            <div style="margin-top:14px;font-size:.75rem;opacity:.4;">${T('webAppNote')}</div>
+          </div>`;
         }
- 
-        function populateApps(){
-            const grid=document.getElementById('app-grid');
-            grid.innerHTML='';
-            const appsInFolders=folders.flatMap(f=>f.apps);
- 
-            folders.forEach((folder,fi)=>{
-                const wrap=document.createElement('div');
-                wrap.className='folder-wrapper';
-                wrap.onclick=()=>openFolder(fi);
-                const fIcon=document.createElement('div');
-                fIcon.className='folder-icon';
-                folder.apps.slice(0,4).forEach(appId=>{
-                    const app=myApps.find(a=>a.id===appId);
-                    if(app){
-                        const mini=document.createElement('div');
-                        mini.className='mini-icon';
-                        mini.innerHTML=`<span class="material-icons">${app.icon}</span>`;
-                        fIcon.appendChild(mini);
-                    }
-                });
-                const name=document.createElement('div');
-                name.className='app-name';
-                name.textContent=folder.name;
-                wrap.appendChild(fIcon);
-                wrap.appendChild(name);
-                grid.appendChild(wrap);
-            });
- 
-            myApps.filter(app=>!appsInFolders.includes(app.id)).forEach((app,i)=>{
-                const el=document.createElement('div');
-                el.className='app-icon';
-                el.style.animation=`iconAppear 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i*0.04}s both`;
-                el.onclick=()=>openApp(app.id,app.name);
-                el.innerHTML=`<div class="icon"><span class="material-icons">${app.icon}</span></div><div class="app-name">${app.name}</div>`;
-                grid.appendChild(el);
-            });
-        }
- 
-        // Add iconAppear keyframe
-        const styleEl=document.createElement('style');
-        styleEl.textContent=`@keyframes iconAppear { from{opacity:0;transform:scale(0.75) translateY(18px)}to{opacity:1;transform:scale(1) translateY(0)} }`;
-        document.head.appendChild(styleEl);
- 
-        // Long press
-        const homeScreen=document.getElementById('home-screen');
-        homeScreen.addEventListener('touchstart',e=>{if(e.target===homeScreen||e.target.closest('.app-grid'))longPressTimer=setTimeout(()=>showContextMenu(e.touches[0]),500);},{passive:true});
-        homeScreen.addEventListener('touchend',()=>clearTimeout(longPressTimer),{passive:true});
-        homeScreen.addEventListener('touchmove',()=>clearTimeout(longPressTimer),{passive:true});
-        homeScreen.addEventListener('mousedown',e=>{if(e.target===homeScreen||e.target.closest('.app-grid'))longPressTimer=setTimeout(()=>showContextMenu(e),500);});
-        homeScreen.addEventListener('mouseup',()=>clearTimeout(longPressTimer));
-        homeScreen.addEventListener('mousemove',()=>clearTimeout(longPressTimer));
- 
-        function showContextMenu(touch){
-            const menu=document.getElementById('context-menu'),ov=document.getElementById('overlay');
-            document.querySelectorAll('.app-icon,.folder-wrapper').forEach(el=>el.classList.add('shake'));
-            menu.classList.add('show'); ov.classList.add('show');
-            const x=touch.clientX||touch.pageX,y=touch.clientY||touch.pageY;
-            menu.style.left=`${Math.min(x,window.innerWidth-230)}px`;
-            menu.style.top=`${Math.min(y,window.innerHeight-200)}px`;
-        }
- 
-        // FOLDERS
-        function createFolder(){
-            const name=prompt('Folder name:','Folder');
-            if(!name)return;
-            const available=myApps.filter(app=>!folders.flatMap(f=>f.apps).includes(app.id));
-            const chosen=[];
-            available.forEach(app=>{if(confirm(`Add ${app.name} to folder?`))chosen.push(app.id);});
-            if(chosen.length<2){alert('Need at least 2 apps');return;}
-            folders.push({name,apps:chosen});
-            localStorage.setItem('folders',JSON.stringify(folders));
-            populateApps(); closeAll();
-        }
- 
-        function openFolder(fi){
-            const folder=folders[fi];
-            document.getElementById('folder-modal-title').textContent=folder.name;
-            const grid=document.getElementById('folder-modal-grid');
-            grid.innerHTML='';
-            folder.apps.forEach(appId=>{
-                const app=myApps.find(a=>a.id===appId);
-                if(!app)return;
-                const el=document.createElement('div');
-                el.className='app-icon';
-                el.onclick=()=>{closeFolderModal();setTimeout(()=>openApp(app.id,app.name),200);};
-                el.innerHTML=`<div class="icon"><span class="material-icons">${app.icon}</span></div><div class="app-name">${app.name}</div>`;
-                grid.appendChild(el);
-            });
-            document.getElementById('folder-modal').classList.add('show');
-        }
- 
-        function closeFolderModal(e){
-            if(!e||e.target===document.getElementById('folder-modal'))
-                document.getElementById('folder-modal').classList.remove('show');
-        }
- 
-        // HOME BUTTON toggle
-        function setHomeButtonVisible(v){
-            document.getElementById('home-button').classList.toggle('visible',v);
-            document.getElementById('dock').classList.toggle('hidden',v);
-        }
- 
-        function goHome(){
-            const app=document.getElementById('app-fullscreen');
-            app.classList.add('closing');
-            app.addEventListener('animationend',()=>{
-                app.classList.remove('show','closing');
-                setHomeButtonVisible(false);
-                if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-                if(recorder){recorder.stop();recorder=null;}
-            },{once:true});
-        }
- 
-        // OPEN APP - uses current accent color
-        async function openApp(appId,appName){
-            const fullscreen=document.getElementById('app-fullscreen');
-            const titleEl=document.getElementById('app-title');
-            const content=document.getElementById('app-content');
- 
-            // App background uses accent
-            fullscreen.style.background=`rgb(${Math.max(accentR-40,0)},${Math.max(accentG-40,0)},${Math.max(accentB-20,0)})`;
- 
-            titleEl.textContent=appName;
- 
-            if(appId==='camera'){
-                if(!permissions.camera){
-                    content.innerHTML='<p style="padding:30px;opacity:0.6;">Camera disabled in Settings</p>';
-                    fullscreen.classList.add('show'); setHomeButtonVisible(true); return;
-                }
-                content.innerHTML=`
-                    <div style="display:flex;flex-direction:column;align-items:center;">
-                        <video id="cam" autoplay playsinline></video>
-                        <div class="camera-controls">
-                            <button class="camera-btn" onclick="takePhoto()"><span class="material-icons">camera_alt</span>Photo</button>
-                            <button class="camera-btn" onclick="toggleVideo()"><span class="material-icons">videocam</span><span id="vbtn">Record</span></button>
-                            <button class="camera-btn" onclick="document.getElementById('media-picker').click()"><span class="material-icons">upload</span>Import</button>
-                        </div>
-                    </div>`;
-                fullscreen.classList.add('show'); setHomeButtonVisible(true);
-                try{
-                    stream=await navigator.mediaDevices.getUserMedia({video:true});
-                    document.getElementById('cam').srcObject=stream;
-                }catch(e){content.innerHTML='<p style="padding:30px;opacity:0.6;">Camera access denied</p>';}
-            }else if(appId==='gallery'){
-                content.innerHTML='<div id="gallery-wrap"></div>';
-                fullscreen.classList.add('show'); setHomeButtonVisible(true);
-                renderGallery();
-            }else if(appId==='calculator'){
-                renderCalculator(content);
-                fullscreen.classList.add('show'); setHomeButtonVisible(true);
-            }else{
-                content.innerHTML=`<p style="padding:30px;opacity:0.5;">${appName} coming soon</p>`;
-                fullscreen.classList.add('show'); setHomeButtonVisible(true);
-            }
-        }
- 
-        // CALCULATOR
-        function renderCalculator(content){
-            calcExpr=''; calcResult='0';
-            content.innerHTML=`
-            <div class="calc-wrap">
-                <div class="calc-display">
-                    <div class="calc-expr" id="ce"></div>
-                    <div class="calc-result" id="cr">0</div>
-                </div>
-                <div class="calc-buttons">
-                    <button class="calc-btn fn" onclick="cFn('AC')">AC</button>
-                    <button class="calc-btn fn" onclick="cFn('+/-')">+/-</button>
-                    <button class="calc-btn fn" onclick="cFn('%')">%</button>
-                    <button class="calc-btn op" onclick="cOp('/')">÷</button>
-                    <button class="calc-btn num" onclick="cNum('7')">7</button>
-                    <button class="calc-btn num" onclick="cNum('8')">8</button>
-                    <button class="calc-btn num" onclick="cNum('9')">9</button>
-                    <button class="calc-btn op" onclick="cOp('*')">×</button>
-                    <button class="calc-btn num" onclick="cNum('4')">4</button>
-                    <button class="calc-btn num" onclick="cNum('5')">5</button>
-                    <button class="calc-btn num" onclick="cNum('6')">6</button>
-                    <button class="calc-btn op" onclick="cOp('-')">−</button>
-                    <button class="calc-btn num" onclick="cNum('1')">1</button>
-                    <button class="calc-btn num" onclick="cNum('2')">2</button>
-                    <button class="calc-btn num" onclick="cNum('3')">3</button>
-                    <button class="calc-btn op" onclick="cOp('+')">+</button>
-                    <button class="calc-btn num zero" onclick="cNum('0')">0</button>
-                    <button class="calc-btn num" onclick="cNum('.')">.</button>
-                    <button class="calc-btn eq" onclick="cEq()">=</button>
-                </div>
-            </div>`;
-        }
- 
-        function cNum(n){
-            if(calcResult==='0'&&n!=='.')calcResult=n;
-            else calcResult+=n;
-            document.getElementById('cr').textContent=calcResult;
-        }
-        function cOp(op){
-            calcExpr+=calcResult+op; calcResult='0';
-            document.getElementById('ce').textContent=calcExpr;
-            document.getElementById('cr').textContent='0';
-        }
-        function cEq(){
-            try{
-                const expr=calcExpr+calcResult;
-                const res=Function('"use strict";return('+expr+')')();
-                document.getElementById('ce').textContent=expr+' =';
-                const r=parseFloat(res.toFixed(10)).toString();
-                document.getElementById('cr').textContent=r;
-                calcResult=r; calcExpr='';
-            }catch(e){document.getElementById('cr').textContent='Error';calcResult='0';calcExpr='';}
-        }
-        function cFn(fn){
-            if(fn==='AC'){calcResult='0';calcExpr='';document.getElementById('ce').textContent='';document.getElementById('cr').textContent='0';}
-            else if(fn==='+/-'){calcResult=String(-parseFloat(calcResult));document.getElementById('cr').textContent=calcResult;}
-            else if(fn==='%'){calcResult=String(parseFloat(calcResult)/100);document.getElementById('cr').textContent=calcResult;}
-        }
- 
-        // CAMERA FUNCTIONS
-        function takePhoto(){
-            const cam=document.getElementById('cam');if(!cam)return;
-            const c=document.createElement('canvas');c.width=640;c.height=480;
-            c.getContext('2d').drawImage(cam,0,0,640,480);
-            saveMedia('image',c.toDataURL()); alert('Photo saved!');
-        }
- 
-        function toggleVideo(){
-            if(!recorder){
-                recorder=new MediaRecorder(stream);
-                recorder.ondataavailable=e=>chunks.push(e.data);
-                recorder.onstop=()=>{
-                    const blob=new Blob(chunks,{type:'video/webm'});
-                    saveMedia('video',URL.createObjectURL(blob));
-                    chunks=[]; alert('Video saved!');
-                };
-                recorder.start();
-                document.getElementById('vbtn').textContent='Stop';
-            }else{
-                recorder.stop(); recorder=null;
-                document.getElementById('vbtn').textContent='Record';
-            }
-        }
- 
-        function saveMedia(type,data){
-            const items=JSON.parse(localStorage.media||'[]');
-            items.push({type,data,date:Date.now()});
-            localStorage.media=JSON.stringify(items);
-        }
- 
-        function renderGallery(){
-            const wrap=document.getElementById('gallery-wrap');
-            if(!wrap)return;
-            const items=JSON.parse(localStorage.media||'[]');
-            if(items.length===0){
-                wrap.innerHTML=`<div class="gallery-empty"><span class="material-icons">photo_library</span><p>No media yet</p></div>`;
-                return;
-            }
-            wrap.innerHTML=`
-                <div class="gallery-header">
-                    <h3>Gallery</h3>
-                    <span style="opacity:0.45;font-size:0.85rem;">${items.length} item${items.length!==1?'s':''}</span>
-                </div>
-                <div class="gallery-grid" id="gallery-grid"></div>`;
-            const grid=document.getElementById('gallery-grid');
-            items.forEach((item,idx)=>{
-                const c=document.createElement('div');
-                c.className='gallery-item';
-                if(item.type==='image'){
-                    c.innerHTML=`
-                        <img src="${item.data}" loading="lazy">
-                        <div class="gallery-item-overlay">
-                            <button class="gallery-del-btn" onclick="deleteMedia(${idx})"><span class="material-icons">delete</span></button>
-                        </div>`;
-                }else{
-                    c.innerHTML=`
-                        <video src="${item.data}"></video>
-                        <div class="video-badge"><span class="material-icons">videocam</span>VID</div>
-                        <div class="gallery-item-overlay">
-                            <button class="gallery-del-btn" onclick="deleteMedia(${idx})"><span class="material-icons">delete</span></button>
-                        </div>`;
-                }
-                grid.appendChild(c);
-            });
-        }
- 
-        function deleteMedia(idx){
-            const items=JSON.parse(localStorage.media||'[]');
-            items.splice(idx,1);
-            localStorage.media=JSON.stringify(items);
-            renderGallery();
-        }
- 
-        document.getElementById('media-picker').onchange=e=>{
-            [...e.target.files].forEach(f=>{
-                saveMedia(f.type.startsWith('video')?'video':'image',URL.createObjectURL(f));
-            });
-            alert('Imported!');
-        };
- 
-        function toggleControlCenter(){
-            const cc=document.getElementById('control-center'),ov=document.getElementById('overlay');
-            if(cc.classList.contains('show')){cc.classList.remove('show');ov.classList.remove('show');}
-            else{closeAll();cc.classList.add('show');ov.classList.add('show');}
-        }
- 
-        function adjustBrightness(v){
-            document.getElementById('brightness-overlay').style.opacity=((100-v)/80)*0.6;
-            localStorage.setItem('brightness',v);
-        }
- 
-        function openSettings(){closeAll();document.getElementById('settings-panel').classList.add('show');document.getElementById('overlay').classList.add('show');}
-        function closeSettings(){document.getElementById('settings-panel').classList.remove('show');document.getElementById('overlay').classList.remove('show');}
- 
-        function toggleIconSize(){
-            const b=document.body,toggle=document.getElementById('icon-size-toggle'),text=document.getElementById('icon-size-text');
-            largeIconsEnabled=!largeIconsEnabled;
-            b.classList.toggle('large-icons',largeIconsEnabled);
-            toggle.classList.toggle('active',largeIconsEnabled);
-            if(text)text.textContent=largeIconsEnabled?'Normal Icons':'Large Icons';
-            localStorage.setItem('largeIcons',largeIconsEnabled);
-            closeAll();
-        }
- 
-        function toggleTheme(){
-            const b=document.body,t=document.getElementById('theme-toggle');
-            const goLight=b.classList.contains('dark');
-            b.classList.toggle('dark',!goLight);
-            b.classList.toggle('light',goLight);
-            t.classList.toggle('active',!goLight);
-            localStorage.setItem('theme',goLight?'light':'dark');
-            setTimeout(updateAdaptiveColors,50);
-        }
- 
-        function togglePrivacy(item,type){
-            permissions[type]=!permissions[type];
-            item.querySelector('.toggle-switch').classList.toggle('active',permissions[type]);
-            localStorage.setItem('permissions',JSON.stringify(permissions));
-        }
- 
-        // ---- CORE: Full adaptative colors ----
-        // yes yes!
-        function updateAdaptiveColors(){
-            const body=document.body;
-            if(body.classList.contains('custom-wallpaper')){
-                const urlVal=body.style.getPropertyValue('--custom-wallpaper');
-                const url=urlVal.replace(/url\(['"]?(.+?)['"]?\)/,'$1');
-                if(!url){applySystemColors();return;}
-                const img=new Image();
-                img.crossOrigin='Anonymous';
-                img.onload=function(){
-                    try{
-                        const c=document.createElement('canvas');
-                        const ctx=c.getContext('2d');
-                        c.width=80; c.height=80;
-                        ctx.drawImage(img,0,0,80,80);
-                        const data=ctx.getImageData(0,0,80,80).data;
-                        let r=0,g=0,b=0;
-                        const px=data.length/4;
-                        for(let i=0;i<data.length;i+=4){r+=data[i];g+=data[i+1];b+=data[i+2];}
-                        r=Math.round(r/px); g=Math.round(g/px); b=Math.round(b/px);
- 
-                        // Boost saturation so accent is vivid, not grey
-                        const max=Math.max(r,g,b),min=Math.min(r,g,b);
-                        const sat=(max-min)/(max||1);
-                        // If image is too grey/white, desaturate gracefully
-                        if(sat<0.08){
-                            // Use a tinted version of the dominant channel
-                            const boost=60;
-                            if(r>=g&&r>=b){setAccent(Math.min(r+boost,255),Math.max(g-20,0),Math.max(b-20,0));}
-                            else if(g>=r&&g>=b){setAccent(Math.max(r-20,0),Math.min(g+boost,255),Math.max(b-20,0));}
-                            else{setAccent(Math.max(r-20,0),Math.max(g-20,0),Math.min(b+boost,255));}
-                        }else{
-                            setAccent(r,g,b);
-                        }
-                        applyEverything();
-                    }catch(e){applySystemColors();}
-                };
-                img.onerror=()=>applySystemColors();
-                img.src=url;
-            }else{
-                applySystemColors();
-            }
-        }
- 
-        function applySystemColors(){
-            const isDark=document.body.classList.contains('dark');
-            if(isDark) setAccent(130,140,200);
-            else setAccent(100,140,210);
-            applyEverything();
-        }
- 
-        function applyEverything(){
-            const r=accentR,g=accentG,b=accentB;
-            const iconBg=`rgba(${r},${g},${b},0.3)`;
-            const iconBorder=`rgba(${r},${g},${b},0.4)`;
-            const panelBg=`rgba(${Math.max(r-40,8)},${Math.max(g-40,8)},${Math.max(b-20,12)},0.97)`;
-            const tileBg=`rgba(${r},${g},${b},0.14)`;
-            const appBg=`rgb(${Math.max(r-50,5)},${Math.max(g-50,5)},${Math.max(b-30,8)})`;
- 
-            // Icons
-            document.querySelectorAll('.icon,.folder-icon').forEach(el=>{el.style.background=iconBg;el.style.borderColor=iconBorder;});
-            // Dock icons
-            document.querySelectorAll('.dock-icon').forEach(el=>{el.style.background=iconBg;el.style.borderColor=iconBorder;});
-            // Panels
-            document.querySelectorAll('.control-center,.settings-panel,.context-menu').forEach(el=>{el.style.background=panelBg;});
-            // Control tiles
-            document.querySelectorAll('.control-tile').forEach(el=>{if(!el.classList.contains('active'))el.style.background=tileBg;});
-            // Control tile icons + brightness icon
-            document.querySelectorAll('.ct-accent-icon').forEach(el=>{el.style.color=`rgb(${r},${g},${b})`;});
-            // Setting icons
-            document.querySelectorAll('.setting-info .material-icons').forEach(el=>{el.style.color=`rgb(${r},${g},${b})`;});
-            // App background
-            const app=document.getElementById('app-fullscreen');
-            if(!app.classList.contains('show')) app.style.background=appBg;
-            // Toggle active color
-            document.documentElement.style.setProperty('--accent-hex',`rgb(${r},${g},${b})`);
-        }
- 
-        function loadCustomWallpaper(input){
-            const file=input.files[0];
-            if(!file)return;
-            const reader=new FileReader();
-            reader.onload=e=>{
-                const dataUrl=e.target.result;
-                document.body.style.setProperty('--custom-wallpaper',`url('${dataUrl}')`);
-                document.body.classList.add('custom-wallpaper');
-                localStorage.setItem('customWallpaper',dataUrl);
-                setTimeout(updateAdaptiveColors,150);
-            };
-            reader.readAsDataURL(file);
-        }
- 
-        function closeAll(){
-            document.getElementById('control-center').classList.remove('show');
-            document.getElementById('settings-panel').classList.remove('show');
-            document.getElementById('context-menu').classList.remove('show');
-            document.getElementById('overlay').classList.remove('show');
-            document.querySelectorAll('.app-icon,.folder-wrapper').forEach(el=>el.classList.remove('shake'));
-        }
- 
-        function updateTime(){
-            const now=new Date();
-            document.getElementById('time').textContent=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-        }
- 
-        // INIT
-        populateApps();
-        updateTime();
-        setInterval(updateTime,1000);
- 
-        if(localStorage.getItem('theme')==='light'){document.body.classList.replace('dark','light');document.getElementById('theme-toggle').classList.remove('active');}
-        if(localStorage.getItem('largeIcons')==='true'){largeIconsEnabled=true;document.body.classList.add('large-icons');document.getElementById('icon-size-toggle').classList.add('active');}
-        const savedBr=localStorage.getItem('brightness');if(savedBr){document.getElementById('brightness-slider').value=savedBr;adjustBrightness(savedBr);}
- 
-        const savedWall=localStorage.getItem('customWallpaper');
-        if(savedWall){
-            document.body.style.setProperty('--custom-wallpaper',`url('${savedWall}')`);
-            document.body.classList.add('custom-wallpaper');
-            setTimeout(updateAdaptiveColors,300);
-        }else{
-            updateAdaptiveColors();
-        }
- 
-        const savedPerm=localStorage.getItem('permissions');
-        if(savedPerm){permissions=JSON.parse(savedPerm);if(!permissions.camera)document.getElementById('camera-toggle').classList.remove('active');}
- 
-    </script>
- 
-    <!-- liquid gl maybe ? -->
-    <script src="https://raw.githubusercontent.com/naughtyduk/liquidGL/main/scripts/html2canvas.min.js"></script>
-    <script src="https://raw.githubusercontent.com/naughtyduk/liquidGL/main/scripts/liquidGL.js"></script>
-    <script>
-        // hello im enderten if you seeing this hi :)
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                if (typeof liquidGL !== 'undefined') {
-                    try {
-                        liquidGL({
-                            target: '.liquidGL',
-                            snapshot: 'body',
-                            resolution: 2.0,
-                            refraction: 0.01,
-                            bevelDepth: 0.052,
-                            bevelWidth: 0.211,
-                            frost: 2,
-                            shadow: true,
-                            specular: true,
-                            reveal: 'fade',
-                            tilt: false,
-                            on: {
-                                init(instance) {
-                                    console.log('liquidGL ready!', instance);
-                                    updateAdaptiveColors();
-                                }
-                            }
-                        });
-                    } catch(e) {
-                        console.warn('liquidGL init failed:', e);
-                    }
-                } else {
-                    console.warn('liquidGL not loaded - CSS backdrop-filter fallback active');
-                    updateAdaptiveColors();
-                }
-            }, 500);
-        });
-    </script>
+      } else {
+        body.innerHTML=`<div style="padding:30px;opacity:.35;">${name} — coming soon</div>`;
+      }
+  }
+
+  af.style.display='flex';
+  af.classList.remove('out'); af.classList.add('in');
+  // Show home btn based on mode
+  setHomeBtn(true);
+}
+
+// ═══════════════════════════════════════════════
+//  CAMERA
+// ═══════════════════════════════════════════════
+async function renderCam(body){
+  body.style.padding='0';
+  body.innerHTML=`<div class="cam-wrap">
+    <video id="cam-v" autoplay playsinline muted></video>
+    <div class="cam-flash-fx" id="cam-flash"></div>
+    <div class="cam-top">
+      <button class="cam-tbtn" id="flash-btn" onclick="toggleFlash()">⚡</button>
+      <button class="cam-tbtn">⏱️</button>
+      <button class="cam-tbtn">⚙️</button>
+    </div>
+    <div class="cam-bot">
+      <div class="cam-modes">
+        <div class="cam-mode" onclick="setCamMode('video')">VIDEO</div>
+        <div class="cam-mode on" onclick="setCamMode('photo')">PHOTO</div>
+        <div class="cam-mode" onclick="setCamMode('portrait')">PORTRAIT</div>
+      </div>
+      <div class="cam-ctrls">
+        <div class="cam-thumb" id="cam-thumb" onclick="openApp('gallery',T('gallery'))">📷</div>
+        <div class="cam-shut" id="cam-shut" onclick="camAct()"><div class="cam-shut-in"></div></div>
+        <button class="cam-flip" onclick="flipCam()">🔄</button>
+      </div>
+    </div>
+  </div>`;
+  const camOK=document.getElementById('cam-tog')?.classList.contains('on')??true;
+  if(!camOK){body.innerHTML='<div style="padding:30px;opacity:.5;">📵 Camera disabled in Settings</div>';return;}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:camFacing},audio:false});
+    document.getElementById('cam-v').srcObject=stream;
+  }catch(e){body.innerHTML='<div style="padding:30px;opacity:.5;">🚫 Camera access denied</div>';}
+  const media=JSON.parse(localStorage.soc_media||'[]');
+  if(media.length){
+    const last=media[media.length-1];
+    if(last.type==='image'){const t=document.getElementById('cam-thumb');if(t)t.innerHTML=`<img src="${last.data}">`;}
+  }
+}
+function setCamMode(m){
+  camMode=m;
+  document.querySelectorAll('.cam-mode').forEach(el=>el.classList.toggle('on',el.textContent.toLowerCase()===m||el.textContent==='PHOTO'&&m==='photo'||el.textContent==='VIDEO'&&m==='video'||el.textContent==='PORTRAIT'&&m==='portrait'));
+  const s=document.getElementById('cam-shut');
+  if(s){s.classList.toggle('vid',m==='video');s.classList.remove('rec');}
+}
+function camAct(){if(camMode==='video')toggleVid();else snap();}
+function snap(){
+  const v=document.getElementById('cam-v');if(!v)return;
+  const c=document.createElement('canvas');c.width=v.videoWidth||640;c.height=v.videoHeight||480;
+  c.getContext('2d').drawImage(v,0,0);
+  const data=c.toDataURL('image/jpeg',.92);
+  saveMedia('image',data);
+  const fl=document.getElementById('cam-flash');if(fl){fl.style.opacity='.8';setTimeout(()=>fl.style.opacity='0',80);}
+  const t=document.getElementById('cam-thumb');if(t)t.innerHTML=`<img src="${data}">`;
+}
+function toggleVid(){
+  const s=document.getElementById('cam-shut');
+  if(!recorder){
+    recorder=new MediaRecorder(stream);
+    recorder.ondataavailable=e=>chunks.push(e.data);
+    recorder.onstop=()=>{const b=new Blob(chunks,{type:'video/webm'});saveMedia('video',URL.createObjectURL(b));chunks=[];};
+    recorder.start();if(s)s.classList.add('rec');
+  }else{recorder.stop();recorder=null;if(s)s.classList.remove('rec');}
+}
+function flipCam(){
+  camFacing=camFacing==='environment'?'user':'environment';
+  if(stream)stream.getTracks().forEach(t=>t.stop());
+  navigator.mediaDevices.getUserMedia({video:{facingMode:camFacing}}).then(s=>{stream=s;const v=document.getElementById('cam-v');if(v)v.srcObject=s;}).catch(()=>{});
+}
+let flashOn=false;
+function toggleFlash(){flashOn=!flashOn;const b=document.getElementById('flash-btn');if(b)b.textContent=flashOn?'🔦':'⚡';}
+function saveMedia(type,data){
+  const items=JSON.parse(localStorage.soc_media||'[]');
+  items.push({type,data,date:Date.now()});
+  localStorage.soc_media=JSON.stringify(items);
+}
+
+// ═══════════════════════════════════════════════
+//  GALLERY
+// ═══════════════════════════════════════════════
+function renderGallery(body){
+  body.innerHTML='<div class="gal-wrap" id="gw"></div>';
+  const w=document.getElementById('gw');
+  const items=JSON.parse(localStorage.soc_media||'[]');
+  if(!items.length){w.innerHTML=`<div class="gal-hd"><h3>${T('gallery')}</h3></div><div class="gal-empty">🖼️<p style="font-size:.85rem;opacity:.7;">${T('noMedia')}</p></div>`;return;}
+  w.innerHTML=`<div class="gal-hd"><h3>${T('gallery')}</h3><span class="gal-cnt">${items.length} item${items.length!==1?'s':''}</span></div><div class="gal-grid" id="gg"></div>`;
+  const g=document.getElementById('gg');
+  items.slice().reverse().forEach((item,idx)=>{
+    const ri=items.length-1-idx;
+    const c=document.createElement('div');c.className='gal-item';
+    c.innerHTML=item.type==='image'
+      ?`<img src="${item.data}" loading="lazy"><div class="gal-ov"><button class="gal-del" onclick="delMedia(${ri})">🗑️</button></div>`
+      :`<video src="${item.data}"></video><div class="vid-badge">▶ VID</div><div class="gal-ov"><button class="gal-del" onclick="delMedia(${ri})">🗑️</button></div>`;
+    g.appendChild(c);
+  });
+}
+function delMedia(idx){
+  const items=JSON.parse(localStorage.soc_media||'[]');items.splice(idx,1);localStorage.soc_media=JSON.stringify(items);
+  const b=document.getElementById('af-body');if(b)renderGallery(b);
+}
+document.getElementById('media-picker').onchange=e=>{
+  [...e.target.files].forEach(f=>saveMedia(f.type.startsWith('video')?'video':'image',URL.createObjectURL(f)));
+};
+
+// ═══════════════════════════════════════════════
+//  CALCULATOR
+// ═══════════════════════════════════════════════
+let cExpr='',cRes='0';
+function renderCalc(body){
+  cExpr='';cRes='0';
+  body.innerHTML=`<div class="calc">
+  <div class="calc-disp"><div class="calc-expr" id="ce"></div><div class="calc-res" id="cr">0</div></div>
+  <div class="calc-grid">
+    <button class="cb f" onclick="cFn('AC')">AC</button>
+    <button class="cb f" onclick="cFn('+/-')">+/-</button>
+    <button class="cb f" onclick="cFn('%')">%</button>
+    <button class="cb o" onclick="cOp('/')">÷</button>
+    <button class="cb n" onclick="cNum('7')">7</button>
+    <button class="cb n" onclick="cNum('8')">8</button>
+    <button class="cb n" onclick="cNum('9')">9</button>
+    <button class="cb o" onclick="cOp('*')">×</button>
+    <button class="cb n" onclick="cNum('4')">4</button>
+    <button class="cb n" onclick="cNum('5')">5</button>
+    <button class="cb n" onclick="cNum('6')">6</button>
+    <button class="cb o" onclick="cOp('-')">−</button>
+    <button class="cb n" onclick="cNum('1')">1</button>
+    <button class="cb n" onclick="cNum('2')">2</button>
+    <button class="cb n" onclick="cNum('3')">3</button>
+    <button class="cb o" onclick="cOp('+')">+</button>
+    <button class="cb n z" onclick="cNum('0')">0</button>
+    <button class="cb n" onclick="cNum('.')">.</button>
+    <button class="cb e" onclick="cEq()">=</button>
+  </div></div>`;
+}
+function cNum(n){if(cRes==='0'&&n!=='.')cRes=n;else cRes+=n;document.getElementById('cr').textContent=cRes;}
+function cOp(op){cExpr+=cRes+op;cRes='0';document.getElementById('ce').textContent=cExpr;document.getElementById('cr').textContent='0';}
+function cEq(){try{const e=cExpr+cRes;const r=Function('"use strict";return('+e+')')();document.getElementById('ce').textContent=e+' =';const s=parseFloat(r.toFixed(10)).toString();document.getElementById('cr').textContent=s;cRes=s;cExpr='';}catch(e){document.getElementById('cr').textContent='Error';cRes='0';cExpr='';}}
+function cFn(fn){if(fn==='AC'){cRes='0';cExpr='';document.getElementById('ce').textContent='';document.getElementById('cr').textContent='0';}else if(fn==='+/-'){cRes=String(-parseFloat(cRes));document.getElementById('cr').textContent=cRes;}else if(fn==='%'){cRes=String(parseFloat(cRes)/100);document.getElementById('cr').textContent=cRes;}}
+
+// ═══════════════════════════════════════════════
+//  NOTES
+// ═══════════════════════════════════════════════
+function renderNotes(body){
+  body.innerHTML=`<div class="notes-wrap">
+    <div class="notes-new">
+      <input class="notes-inp" id="note-inp" type="text" placeholder="${T('notes')||'New note…'}" onkeydown="if(event.key==='Enter')addNote()">
+      <button class="notes-add" onclick="addNote()">➕</button>
+    </div>
+    <div class="notes-list" id="notes-list"></div>
+  </div>`;
+  renderNoteList();
+}
+function renderNoteList(){
+  const list=document.getElementById('notes-list');if(!list)return;list.innerHTML='';
+  notes.slice().reverse().forEach((n,ri)=>{
+    const realIdx=notes.length-1-ri;
+    const item=document.createElement('div');item.className='note-item';
+    item.innerHTML=`<div class="note-txt">${n}</div><button class="note-del" onclick="delNote(${realIdx})">✕</button>`;
+    list.appendChild(item);
+  });
+}
+function addNote(){
+  const inp=document.getElementById('note-inp');if(!inp?.value.trim())return;
+  notes.push(inp.value.trim());localStorage.setItem('soc_notes',JSON.stringify(notes));inp.value='';renderNoteList();
+}
+function delNote(idx){notes.splice(idx,1);localStorage.setItem('soc_notes',JSON.stringify(notes));renderNoteList();}
+
+// ═══════════════════════════════════════════════
+//  WEATHER
+// ═══════════════════════════════════════════════
+function renderWeather(body){
+  const conditions=['☀️ Sunny','⛅ Partly Cloudy','☁️ Cloudy','🌧️ Light Rain','🌙 Clear Night'];
+  const icons=['☀️','⛅','☁️','🌧️','🌙'];
+  const idx=Math.floor(Math.random()*conditions.length);
+  const temp=Math.floor(18+Math.random()*16);
+  body.innerHTML=`<div class="weather-wrap">
+    <div class="weather-city">📍 Your Location</div>
+    <div style="font-size:80px;">${icons[idx]}</div>
+    <div class="weather-temp">${temp}°C</div>
+    <div class="weather-cond">${conditions[idx]}</div>
+    <div class="weather-details">
+      <div class="weather-card"><span class="ico">💧</span><div class="weather-card-val">${Math.floor(30+Math.random()*50)}%</div><div class="weather-card-lbl">Humidity</div></div>
+      <div class="weather-card"><span class="ico">💨</span><div class="weather-card-val">${Math.floor(8+Math.random()*20)} km/h</div><div class="weather-card-lbl">Wind</div></div>
+      <div class="weather-card"><span class="ico">👁️</span><div class="weather-card-val">${Math.floor(8+Math.random()*12)} km</div><div class="weather-card-lbl">Visibility</div></div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  ADD APP
+// ═══════════════════════════════════════════════
+function renderAdd(body){
+  pendingIconUrl=null;
+  body.innerHTML=`<div class="add-wrap">
+    <div class="add-title">${T('addApp')}</div>
+    <div><div class="add-lbl">${T('appName')}</div><input class="add-inp" id="add-name" type="text" placeholder="My App"></div>
+    <div><div class="add-lbl">${T('url')}</div><input class="add-inp" id="add-url" type="url" placeholder="https://example.com"></div>
+    <div>
+      <div class="add-lbl">${T('iconOptional')}</div>
+      <div class="add-ico-row">
+        <div class="add-ico-prev" id="add-ico-prev" onclick="document.getElementById('icon-inp').click()">➕</div>
+        <div class="add-hint">${T('tapUpload')}<br><span style="opacity:.6;">${T('orLeave')}</span></div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="confirmAddApp()">${T('addToHome')}</button>
+    <div class="add-note">🔒 ${T('webAppNote')}</div>
+  </div>`;
+}
+function handleIconFile(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    pendingIconUrl=e.target.result;
+    const p=document.getElementById('add-ico-prev');
+    if(p)p.innerHTML=`<img src="${pendingIconUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  };
+  r.readAsDataURL(f);
+}
+function confirmAddApp(){
+  const name=document.getElementById('add-name')?.value.trim();
+  const url=document.getElementById('add-url')?.value.trim();
+  if(!name){showToast('societyOS',T('appName')+' required','⚠️');return;}
+  if(!url){showToast('societyOS',T('url')+' required','⚠️');return;}
+  const id='custom_'+Date.now();
+  const app={id,name,url,emoji:'🌐',iconImg:pendingIconUrl||null};
+  customApps.push(app);
+  myApps=[...builtins,...customApps];
+  localStorage.setItem('soc_customs',JSON.stringify(customApps));
+  showToast('societyOS',`${name} added!`,'✅');
+  goHome();
+  setTimeout(buildGrid,460);
+}
+
+// ═══════════════════════════════════════════════
+//  ABOUT
+// ═══════════════════════════════════════════════
+function renderAbout(body){
+  body.innerHTML=`<div class="about-wrap">
+    <div class="about-logo">🌍</div>
+    <div class="about-name">societyOS</div>
+    <div class="about-tag">A new open-source OS project,<br>made by you, me, and all.</div>
+    <div class="about-ver">Version 1.3 Alpha</div>
+    <div class="open-badge">💻 Open Source · MIT License</div>
+    <div class="about-card">
+      <div class="about-card-t">Community</div>
+      <div class="about-stat">
+        <div><div class="about-stat-num">∞</div><div class="about-stat-lbl">Contributors</div></div>
+        <div><div class="about-stat-num">0</div><div class="about-stat-lbl">Bugs (hopefully)</div></div>
+        <div><div class="about-stat-num">🐸</div><div class="about-stat-lbl">Mascot</div></div>
+      </div>
+    </div>
+    <div style="font-size:.78rem;opacity:.3;text-align:center;">Built with love, HTML & lots of 💙</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  PANELS
+// ═══════════════════════════════════════════════
+function toggleCC(){
+  const cc=document.getElementById('cc'),ov=document.getElementById('ov');
+  if(cc.classList.contains('on')){cc.classList.remove('on');ov.classList.remove('on');}
+  else{closeAll();cc.classList.add('on');ov.classList.add('on');}
+}
+function setBrightness(v){document.getElementById('dim').style.opacity=((100-v)/80)*.6;localStorage.setItem('soc_brightness',v);}
+function openSettings(){closeAll();openPanel('settings');}
+function openPanel(id){document.getElementById(id).classList.add('on');document.getElementById('ov').classList.add('on');}
+function closePanel(id){document.getElementById(id).classList.remove('on');document.getElementById('ov').classList.remove('on');}
+function toggleTile(id){document.getElementById(id)?.classList.toggle('on');}
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  const isLight=document.body.classList.contains('light');
+  document.getElementById('dark-tog')?.classList.toggle('on',!isLight);
+  document.getElementById('cc-dark')?.classList.toggle('on',isLight);
+  localStorage.setItem('soc_theme',isLight?'light':'dark');
+}
+function toggleIconSize(){
+  largeIcons=!largeIcons;
+  document.body.classList.toggle('large-icons',largeIcons);
+  document.getElementById('lg-tog')?.classList.toggle('on',largeIcons);
+  const t=document.getElementById('ctx-icon-text');if(t)t.textContent=largeIcons?T('largeIcons'):T('largeIcons');
+  localStorage.setItem('soc_largeIcons',largeIcons);closeAll();
+}
+function changePIN(){
+  const pin=prompt(T('screenLock')+' (4 digits):');
+  if(pin&&/^\d{4}$/.test(pin)){localStorage.setItem('soc_pin',pin);document.getElementById('pin-sub').textContent='Set (••••)';}
+  else if(pin)alert('PIN must be exactly 4 digits');
+}
+function closeAll(){
+  ['cc','settings','ctx'].forEach(id=>document.getElementById(id)?.classList.remove('on'));
+  document.getElementById('ov').classList.remove('on');
+  document.querySelectorAll('.ai,.fi-wrap').forEach(e=>e.classList.remove('shake'));
+}
+
+// ═══════════════════════════════════════════════
+//  LANGUAGE
+// ═══════════════════════════════════════════════
+function openLang(){
+  closeAll();
+  document.getElementById('lang-modal').classList.add('on');
+  document.querySelectorAll('.lang-opt').forEach(el=>{
+    el.classList.toggle('active',el.dataset.lang===lang);
+  });
+}
+function setLang(l){
+  lang=l;
+  localStorage.setItem('soc_lang',l);
+  document.querySelectorAll('.lang-opt').forEach(el=>el.classList.toggle('active',el.dataset.lang===l));
+  applyLang();
+  buildGrid();
+}
+
+// ═══════════════════════════════════════════════
+//  ADAPTIVE COLORS
+// ═══════════════════════════════════════════════
+function updateAdaptiveColors(){
+  const wp=document.getElementById('wp');
+  const bg=wp.style.backgroundImage;
+  if(!bg||!bg.includes('url')){setDefaultAccent();return;}
+  const url=bg.replace(/url\(['"]?(.+?)['"]?\)/,'$1');
+  const img=new Image(); img.crossOrigin='Anonymous';
+  img.onload=()=>{
+    try{
+      const c=document.createElement('canvas');const ctx=c.getContext('2d');
+      c.width=80;c.height=80;ctx.drawImage(img,0,0,80,80);
+      const data=ctx.getImageData(0,0,80,80).data;
+      let r=0,g=0,b=0;const px=data.length/4;
+      for(let i=0;i<data.length;i+=4){r+=data[i];g+=data[i+1];b+=data[i+2];}
+      r=Math.round(r/px);g=Math.round(g/px);b=Math.round(b/px);
+      const max=Math.max(r,g,b),min=Math.min(r,g,b);
+      const sat=(max-min)/(max||1);
+      if(sat<.15){const lum=.299*r+.587*g+.114*b;setAccent(lum<100?100:80,lum<100?140:110,lum<100?255:220);}
+      else setAccent(r,g,b);
+    }catch(e){setDefaultAccent();}
+  };
+  img.onerror=setDefaultAccent; img.src=url;
+}
+function setDefaultAccent(){
+  const saved=localStorage.getItem('soc_accent');
+  if(saved){setAccentFromStr(saved);return;}
+  setAccent(99,149,255);
+}
+function setAccentFromStr(str){
+  const [r,g,b]=str.split(',').map(Number);
+  setAccent(r,g,b);
+}
+function setAccent(r,g,b){
+  acR=r;acG=g;acB=b;
+  document.documentElement.style.setProperty('--ac',`${r},${g},${b}`);
+  document.documentElement.style.setProperty('--ac-hex',`rgb(${r},${g},${b})`);
+  applyColors();
+}
+function applyColors(){
+  const r=acR,g=acG,b=acB;
+  const bg=`rgba(${r},${g},${b},.22)`;
+  const bd=`rgba(${r},${g},${b},.32)`;
+  document.querySelectorAll('.ai-ic,.fi-ic').forEach(el=>{el.style.background=bg;el.style.borderColor=bd;});
+  document.querySelectorAll('.di').forEach(el=>{el.style.background=bg;el.style.borderColor=bd;});
+  document.querySelectorAll('.cc-tile:not(.on)').forEach(el=>el.style.background=`rgba(${r},${g},${b},.1)`);
+  document.querySelectorAll('.fsel-ico').forEach(el=>el.style.background=bg);
+}
+
+function loadWallpaper(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const url=e.target.result;
+    const wp=document.getElementById('wp');
+    wp.style.backgroundImage=`url('${url}')`;
+    wp.style.backgroundSize='cover';wp.style.backgroundPosition='center';
+    localStorage.setItem('soc_wall',url);
+    setTimeout(updateAdaptiveColors,200);
+  };
+  r.readAsDataURL(f);
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+let toastTimer=null;
+function showToast(title,msg,ico='💬'){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-t').textContent=title;
+  document.getElementById('toast-m').textContent=msg;
+  document.getElementById('toast-ico').textContent=ico;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('on'),3500);
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+(function init(){
+  // Language
+  lang=localStorage.getItem('soc_lang')||'en';
+  applyLang();
+
+  // Theme
+  if(localStorage.getItem('soc_theme')==='light'){document.body.classList.add('light');document.getElementById('dark-tog')?.classList.remove('on');}
+
+  // Large icons
+  if(localStorage.getItem('soc_largeIcons')==='true'){largeIcons=true;document.body.classList.add('large-icons');document.getElementById('lg-tog')?.classList.add('on');}
+
+  // Brightness
+  const br=localStorage.getItem('soc_brightness');
+  if(br){document.getElementById('br-sl').value=br;setBrightness(br);}
+
+  // Nav mode
+  const nm=localStorage.getItem('soc_navMode');
+  if(nm==='btn'){useSwipe=false;document.getElementById('nav-tog')?.classList.remove('on');}
+
+  // Wallpaper
+  const wall=localStorage.getItem('soc_wall');
+  if(wall){
+    const wp=document.getElementById('wp');
+    wp.style.backgroundImage=`url('${wall}')`;
+    wp.style.backgroundSize='cover';wp.style.backgroundPosition='center';
+    setTimeout(updateAdaptiveColors,300);
+  }else{
+    const savedAc=localStorage.getItem('soc_accent');
+    if(savedAc)setAccentFromStr(savedAc);else updateAdaptiveColors();
+  }
+
+  // PIN
+  if(localStorage.getItem('soc_pin'))document.getElementById('pin-sub').textContent='Set (••••)';
+
+  buildGrid();
+})();
+</script>
+
+<!-- lhopo -->
+<script src="/scripts/html2canvas.min.js"></script>
+<script src="/scripts/liquidGL.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+  if(typeof liquidGL==='undefined')return;
+  liquidGL({target:'.dock',refraction:0,bevelDepth:0.052,bevelWidth:0.211,frost:2,shadow:true,specular:true,tilt:false,reveal:'fade',on:{init(i){console.log('liquidGL dock ready!',i);}}});
+});
+</script>
 </body>
 </html>
